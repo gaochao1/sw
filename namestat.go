@@ -1,6 +1,6 @@
 package sw
 
-func SysName(ip, community string, timeout int64) (string, error) {
+func SysName(ip, community string, timeout int) (string, error) {
 	oid := "1.3.6.1.2.1.1.5.0"
 	method := "get"
 

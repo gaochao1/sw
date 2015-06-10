@@ -4,7 +4,7 @@ import (
 	"regexp"
 )
 
-func SysModel(ip, community string, timeout int64) (string, error) {
+func SysModel(ip, community string, timeout int) (string, error) {
 	vendor, err := SysVendor(ip, community, timeout)
 	method := "get"
 	var oid string

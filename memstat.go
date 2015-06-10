@@ -4,7 +4,7 @@ import (
 	"log"
 )
 
-func MemUtilization(ip, community string, timeout int64) (int, error) {
+func MemUtilization(ip, community string, timeout int) (int, error) {
 	vendor, err := SysVendor(ip, community, timeout)
 	method := "get"
 	var oid string

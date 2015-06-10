@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-func RunSnmp(ip, community, oid, method string, timeout int64) (snmpPDUs []gosnmp.SnmpPDU, err error) {
-	cur_gosnmp, err := gosnmp.NewGoSNMP(ip, community, gosnmp.Version2c, timeout)
+func RunSnmp(ip, community, oid, method string, timeout int) (snmpPDUs []gosnmp.SnmpPDU, err error) {
+	cur_gosnmp, err := gosnmp.NewGoSNMP(ip, community, gosnmp.Version2c, int64(timeout))
 
 	if err != nil {
 		return nil, err
 	} else {
-		cur_gosnmp.SetTimeout(timeout)
+		cur_gosnmp.SetTimeout(int64(timeout))
 		snmpPDUs, err := ParseSnmpMethod(oid, method, cur_gosnmp)
 		if err != nil {
 			return nil, err

@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func SysDescr(ip, community string, timeout int64) (string, error) {
+func SysDescr(ip, community string, timeout int) (string, error) {
 	oid := "1.3.6.1.2.1.1.1.0"
 	method := "get"
 
@@ -19,7 +19,7 @@ func SysDescr(ip, community string, timeout int64) (string, error) {
 	return "", err
 }
 
-func SysVendor(ip, community string, timeout int64) (string, error) {
+func SysVendor(ip, community string, timeout int) (string, error) {
 	sysDescr, err := SysDescr(ip, community, timeout)
 	sysDescrLower := strings.ToLower(sysDescr)
 

@@ -23,7 +23,7 @@ func (this *IfStats) String() string {
 	return fmt.Sprintf("<IfName:%s, IfIndex:%d, IfHCInOctets:%d, IfHCOutOctets:%d>", this.IfName, this.IfIndex, this.IfHCInOctets, this.IfHCOutOctets)
 }
 
-func ListIfStats(ip, community string, timeout int64, onlyPrefix []string) ([]IfStats, error) {
+func ListIfStats(ip, community string, timeout int, onlyPrefix []string) ([]IfStats, error) {
 	var ifStatsList []IfStats
 
 	chIfInList := make(chan []gosnmp.SnmpPDU)
@@ -52,6 +52,7 @@ func ListIfStats(ip, community string, timeout int64, onlyPrefix []string) ([]If
 
 	if len(ifNameList) > 0 && len(ifInList) > 0 && len(ifOutList) > 0 && len(ifInPktList) > 0 && len(ifOutPktList) > 0 {
 		for _, ifNamePDU := range ifNameList {
+
 			ifName := ifNamePDU.Value.(string)
 
 			var found bool
@@ -80,12 +81,12 @@ func ListIfStats(ip, community string, timeout int64, onlyPrefix []string) ([]If
 			if found {
 				var ifStats IfStats
 
-				ifIndexStr := strings.Replace(ifNamePDU.Name, ".1.3.6.1.2.1.31.1.1.1.1.", "", -1)
+				ifIndexStr := strings.Replace(ifNamePDU.Name, ".1.3.6.1.2.1.31.1.1.1.1.", "", 1)
 
 				ifStats.IfIndex, _ = strconv.Atoi(ifIndexStr)
 
 				for ti, ifHCInOctetsPDU := range ifInList {
-					if strings.Contains(ifHCInOctetsPDU.Name, "."+ifIndexStr) {
+					if strings.Replace(ifHCInOctetsPDU.Name, ".1.3.6.1.2.1.31.1.1.1.6.", "", 1) == ifIndexStr {
 
 						ifStats.IfHCInOctets = ifInList[ti].Value.(int64)
 						ifStats.IfHCOutOctets = ifOutList[ti].Value.(int64)
@@ -95,10 +96,10 @@ func ListIfStats(ip, community string, timeout int64, onlyPrefix []string) ([]If
 
 						ifStats.TS = time.Now().Unix()
 						ifStats.IfName = ifName
-
-						ifStatsList = append(ifStatsList, ifStats)
 					}
 				}
+
+				ifStatsList = append(ifStatsList, ifStats)
 
 			}
 		}
@@ -107,7 +108,7 @@ func ListIfStats(ip, community string, timeout int64, onlyPrefix []string) ([]If
 	return ifStatsList, nil
 }
 
-func ListIfHCInOctets(ip, community string, timeout int64, ch chan []gosnmp.SnmpPDU) {
+func ListIfHCInOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU) {
 	oid := "1.3.6.1.2.1.31.1.1.1.6"
 	method := "walk"
 
@@ -117,7 +118,7 @@ func ListIfHCInOctets(ip, community string, timeout int64, ch chan []gosnmp.Snmp
 	return
 }
 
-func ListIfHCOutOctets(ip, community string, timeout int64, ch chan []gosnmp.SnmpPDU) {
+func ListIfHCOutOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU) {
 	oid := "1.3.6.1.2.1.31.1.1.1.10"
 	method := "walk"
 
@@ -127,7 +128,7 @@ func ListIfHCOutOctets(ip, community string, timeout int64, ch chan []gosnmp.Snm
 	return
 }
 
-func ListIfHCInUcastPkts(ip, community string, timeout int64, ch chan []gosnmp.SnmpPDU) {
+func ListIfHCInUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU) {
 	oid := "1.3.6.1.2.1.31.1.1.1.7"
 	method := "walk"
 
@@ -137,7 +138,7 @@ func ListIfHCInUcastPkts(ip, community string, timeout int64, ch chan []gosnmp.S
 	return
 }
 
-func ListIfHCOutUcastPkts(ip, community string, timeout int64, ch chan []gosnmp.SnmpPDU) {
+func ListIfHCOutUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU) {
 	oid := "1.3.6.1.2.1.31.1.1.1.11"
 	method := "walk"
 
@@ -147,7 +148,7 @@ func ListIfHCOutUcastPkts(ip, community string, timeout int64, ch chan []gosnmp.
 	return
 }
 
-func ListIfName(ip, community string, timeout int64, ch chan []gosnmp.SnmpPDU) {
+func ListIfName(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU) {
 	oid := "1.3.6.1.2.1.31.1.1.1.1"
 	method := "walk"
 

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func SysUpTime(ip, community string, timeout int64) (string, error) {
+func SysUpTime(ip, community string, timeout int) (string, error) {
 	oid := "1.3.6.1.2.1.1.3.0"
 	method := "get"
 
