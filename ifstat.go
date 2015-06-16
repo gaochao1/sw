@@ -23,7 +23,7 @@ func (this *IfStats) String() string {
 	return fmt.Sprintf("<IfName:%s, IfIndex:%d, IfHCInOctets:%d, IfHCOutOctets:%d>", this.IfName, this.IfIndex, this.IfHCInOctets, this.IfHCOutOctets)
 }
 
-func ListIfStats(ip, community string, timeout int, onlyPrefix []string) ([]IfStats, error) {
+func ListIfStats(ip, community string, timeout int, onlyPrefix []string, retry int) ([]IfStats, error) {
 	var ifStatsList []IfStats
 
 	chIfInList := make(chan []gosnmp.SnmpPDU)
@@ -34,13 +34,13 @@ func ListIfStats(ip, community string, timeout int, onlyPrefix []string) ([]IfSt
 
 	chIfNameList := make(chan []gosnmp.SnmpPDU)
 
-	go ListIfHCInOctets(ip, community, timeout, chIfInList)
-	go ListIfHCOutOctets(ip, community, timeout, chIfOutList)
+	go ListIfHCInOctets(ip, community, timeout, chIfInList, retry)
+	go ListIfHCOutOctets(ip, community, timeout, chIfOutList, retry)
 
-	go ListIfHCInUcastPkts(ip, community, timeout, chIfInPktList)
-	go ListIfHCOutUcastPkts(ip, community, timeout, chIfOutPktList)
+	go ListIfHCInUcastPkts(ip, community, timeout, chIfInPktList, retry)
+	go ListIfHCOutUcastPkts(ip, community, timeout, chIfOutPktList, retry)
 
-	go ListIfName(ip, community, timeout, chIfNameList)
+	go ListIfName(ip, community, timeout, chIfNameList, retry)
 
 	ifInList := <-chIfInList
 	ifOutList := <-chIfOutList
@@ -108,52 +108,42 @@ func ListIfStats(ip, community string, timeout int, onlyPrefix []string) ([]IfSt
 	return ifStatsList, nil
 }
 
-func ListIfHCInOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU) {
+func ListIfHCInOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
 	oid := "1.3.6.1.2.1.31.1.1.1.6"
-	method := "walk"
-
-	snmpPDUs, _ := RunSnmp(ip, community, oid, method, timeout)
-
-	ch <- snmpPDUs
-	return
+	RunSnmpRetry(ip, community, timeout, ch, retry, oid)
 }
 
-func ListIfHCOutOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU) {
+func ListIfHCOutOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
 	oid := "1.3.6.1.2.1.31.1.1.1.10"
-	method := "walk"
-
-	snmpPDUs, _ := RunSnmp(ip, community, oid, method, timeout)
-
-	ch <- snmpPDUs
-	return
+	RunSnmpRetry(ip, community, timeout, ch, retry, oid)
 }
 
-func ListIfHCInUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU) {
+func ListIfHCInUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
 	oid := "1.3.6.1.2.1.31.1.1.1.7"
-	method := "walk"
-
-	snmpPDUs, _ := RunSnmp(ip, community, oid, method, timeout)
-
-	ch <- snmpPDUs
-	return
+	RunSnmpRetry(ip, community, timeout, ch, retry, oid)
 }
 
-func ListIfHCOutUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU) {
+func ListIfHCOutUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
 	oid := "1.3.6.1.2.1.31.1.1.1.11"
-	method := "walk"
-
-	snmpPDUs, _ := RunSnmp(ip, community, oid, method, timeout)
-
-	ch <- snmpPDUs
-	return
+	RunSnmpRetry(ip, community, timeout, ch, retry, oid)
 }
 
-func ListIfName(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU) {
+func ListIfName(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
 	oid := "1.3.6.1.2.1.31.1.1.1.1"
+	RunSnmpRetry(ip, community, timeout, ch, retry, oid)
+}
+
+func RunSnmpRetry(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, oid string) {
 	method := "walk"
+	var snmpPDUs []gosnmp.SnmpPDU
 
-	snmpPDUs, _ := RunSnmp(ip, community, oid, method, timeout)
-
+	for i := 0; i < retry; i++ {
+		snmpPDUs, _ = RunSnmp(ip, community, oid, method, timeout)
+		if len(snmpPDUs) > 0 {
+			ch <- snmpPDUs
+			return
+		}
+	}
 	ch <- snmpPDUs
 	return
 }
