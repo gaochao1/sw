@@ -143,6 +143,7 @@ func RunSnmpRetry(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, r
 			ch <- snmpPDUs
 			return
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 	ch <- snmpPDUs
 	return
