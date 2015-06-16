@@ -29,28 +29,33 @@ func ListIfStats(ip, community string, timeout int, onlyPrefix []string, retry i
 	chIfInList := make(chan []gosnmp.SnmpPDU)
 	chIfOutList := make(chan []gosnmp.SnmpPDU)
 
-	chIfInPktList := make(chan []gosnmp.SnmpPDU)
-	chIfOutPktList := make(chan []gosnmp.SnmpPDU)
+	//	chIfInPktList := make(chan []gosnmp.SnmpPDU)
+	//	chIfOutPktList := make(chan []gosnmp.SnmpPDU)
 
 	chIfNameList := make(chan []gosnmp.SnmpPDU)
 
 	go ListIfHCInOctets(ip, community, timeout, chIfInList, retry)
 	go ListIfHCOutOctets(ip, community, timeout, chIfOutList, retry)
 
-	go ListIfHCInUcastPkts(ip, community, timeout, chIfInPktList, retry)
-	go ListIfHCOutUcastPkts(ip, community, timeout, chIfOutPktList, retry)
+	//	go ListIfHCInUcastPkts(ip, community, timeout, chIfInPktList, retry)
+	//	go ListIfHCOutUcastPkts(ip, community, timeout, chIfOutPktList, retry)
 
 	go ListIfName(ip, community, timeout, chIfNameList, retry)
 
 	ifInList := <-chIfInList
 	ifOutList := <-chIfOutList
 
-	ifInPktList := <-chIfInPktList
-	ifOutPktList := <-chIfOutPktList
+	//	ifInPktList := <-chIfInPktList
+	//	ifOutPktList := <-chIfOutPktList
 
 	ifNameList := <-chIfNameList
 
-	if len(ifNameList) > 0 && len(ifInList) > 0 && len(ifOutList) > 0 && len(ifInPktList) > 0 && len(ifOutPktList) > 0 {
+	//	if len(ifNameList) > 0 && len(ifInList) > 0 && len(ifOutList) > 0 && len(ifInPktList) > 0 && len(ifOutPktList) > 0 {
+
+	if len(ifNameList) > 0 && len(ifInList) > 0 && len(ifOutList) > 0 {
+
+		now := time.Now().Unix()
+
 		for _, ifNamePDU := range ifNameList {
 
 			ifName := ifNamePDU.Value.(string)
@@ -91,10 +96,10 @@ func ListIfStats(ip, community string, timeout int, onlyPrefix []string, retry i
 						ifStats.IfHCInOctets = ifInList[ti].Value.(int64)
 						ifStats.IfHCOutOctets = ifOutList[ti].Value.(int64)
 
-						ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(int64)
-						ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(int64)
+						//						ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(int64)
+						//						ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(int64)
 
-						ifStats.TS = time.Now().Unix()
+						ifStats.TS = now
 						ifStats.IfName = ifName
 					}
 				}
