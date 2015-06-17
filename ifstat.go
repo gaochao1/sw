@@ -23,34 +23,35 @@ func (this *IfStats) String() string {
 	return fmt.Sprintf("<IfName:%s, IfIndex:%d, IfHCInOctets:%d, IfHCOutOctets:%d>", this.IfName, this.IfIndex, this.IfHCInOctets, this.IfHCOutOctets)
 }
 
-func ListIfStats(ip, community string, timeout int, onlyPrefix []string, retry int) ([]IfStats, error) {
+func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool) ([]IfStats, error) {
 	var ifStatsList []IfStats
 
 	chIfInList := make(chan []gosnmp.SnmpPDU)
 	chIfOutList := make(chan []gosnmp.SnmpPDU)
-
-	//	chIfInPktList := make(chan []gosnmp.SnmpPDU)
-	//	chIfOutPktList := make(chan []gosnmp.SnmpPDU)
 
 	chIfNameList := make(chan []gosnmp.SnmpPDU)
 
 	go ListIfHCInOctets(ip, community, timeout, chIfInList, retry)
 	go ListIfHCOutOctets(ip, community, timeout, chIfOutList, retry)
 
-	//	go ListIfHCInUcastPkts(ip, community, timeout, chIfInPktList, retry)
-	//	go ListIfHCOutUcastPkts(ip, community, timeout, chIfOutPktList, retry)
-
 	go ListIfName(ip, community, timeout, chIfNameList, retry)
 
 	ifInList := <-chIfInList
 	ifOutList := <-chIfOutList
 
-	//	ifInPktList := <-chIfInPktList
-	//	ifOutPktList := <-chIfOutPktList
-
 	ifNameList := <-chIfNameList
 
-	//	if len(ifNameList) > 0 && len(ifInList) > 0 && len(ifOutList) > 0 && len(ifInPktList) > 0 && len(ifOutPktList) > 0 {
+	chIfInPktList := make(chan []gosnmp.SnmpPDU)
+	chIfOutPktList := make(chan []gosnmp.SnmpPDU)
+
+	var ifInPktList, ifOutPktList []gosnmp.SnmpPDU
+
+	if ignorePkt == false {
+		go ListIfHCInUcastPkts(ip, community, timeout, chIfInPktList, retry)
+		go ListIfHCOutUcastPkts(ip, community, timeout, chIfOutPktList, retry)
+		ifInPktList = <-chIfInPktList
+		ifOutPktList = <-chIfOutPktList
+	}
 
 	if len(ifNameList) > 0 && len(ifInList) > 0 && len(ifOutList) > 0 {
 
@@ -60,21 +61,14 @@ func ListIfStats(ip, community string, timeout int, onlyPrefix []string, retry i
 
 			ifName := ifNamePDU.Value.(string)
 
-			var found bool
-			if len(onlyPrefix) > 0 {
-				found = false
-				for _, prefix := range onlyPrefix {
-					if strings.Contains(ifName, prefix) {
-						found = true
+			check := true
+			if len(ignoreIface) > 0 {
+				for _, ignore := range ignoreIface {
+					if strings.Contains(ifName, ignore) {
+						check = false
 						break
 					}
 				}
-			} else {
-				found = true
-			}
-
-			if ifName == "Nu0" || strings.Contains(ifName, "Stack") {
-				found = false
 			}
 
 			defer func() {
@@ -83,7 +77,7 @@ func ListIfStats(ip, community string, timeout int, onlyPrefix []string, retry i
 				}
 			}()
 
-			if found {
+			if check {
 				var ifStats IfStats
 
 				ifIndexStr := strings.Replace(ifNamePDU.Name, ".1.3.6.1.2.1.31.1.1.1.1.", "", 1)
@@ -96,8 +90,10 @@ func ListIfStats(ip, community string, timeout int, onlyPrefix []string, retry i
 						ifStats.IfHCInOctets = ifInList[ti].Value.(int64)
 						ifStats.IfHCOutOctets = ifOutList[ti].Value.(int64)
 
-						//						ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(int64)
-						//						ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(int64)
+						if ignorePkt == false {
+							ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(int64)
+							ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(int64)
+						}
 
 						ifStats.TS = now
 						ifStats.IfName = ifName

@@ -1,10 +1,12 @@
 package sw
 
 import (
+	"github.com/alouca/gosnmp"
 	"log"
+	"time"
 )
 
-func MemUtilization(ip, community string, timeout int) (int, error) {
+func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 	vendor, err := SysVendor(ip, community, timeout)
 	method := "get"
 	var oid string
@@ -46,7 +48,14 @@ func MemUtilization(ip, community string, timeout int) (int, error) {
 		return 0, err
 	}
 
-	snmpPDUs, err := RunSnmp(ip, community, oid, method, timeout)
+	var snmpPDUs []gosnmp.SnmpPDU
+	for i := 0; i < retry; i++ {
+		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
+		if len(snmpPDUs) > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 
 	if err == nil {
 		for _, pdu := range snmpPDUs {
