@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+const (
+	ifNameOid       = "1.3.6.1.2.1.31.1.1.1.1"
+	ifNameOidPrefix = ".1.3.6.1.2.1.31.1.1.1.1."
+	ifHCInOid       = "1.3.6.1.2.1.31.1.1.1.6"
+	ifHCInOidPrefix = ".1.3.6.1.2.1.31.1.1.1.6."
+	ifHCOutOid      = "1.3.6.1.2.1.31.1.1.1.10"
+	ifHCInPktsOid   = "1.3.6.1.2.1.31.1.1.1.7"
+	ifHCOutPktsOid  = "1.3.6.1.2.1.31.1.1.1.11"
+)
+
 type IfStats struct {
 	IfName           string
 	IfIndex          int
@@ -80,12 +90,12 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 			if check {
 				var ifStats IfStats
 
-				ifIndexStr := strings.Replace(ifNamePDU.Name, ".1.3.6.1.2.1.31.1.1.1.1.", "", 1)
+				ifIndexStr := strings.Replace(ifNamePDU.Name, ifNameOidPrefix, "", 1)
 
 				ifStats.IfIndex, _ = strconv.Atoi(ifIndexStr)
 
 				for ti, ifHCInOctetsPDU := range ifInList {
-					if strings.Replace(ifHCInOctetsPDU.Name, ".1.3.6.1.2.1.31.1.1.1.6.", "", 1) == ifIndexStr {
+					if strings.Replace(ifHCInOctetsPDU.Name, ifHCInOidPrefix, "", 1) == ifIndexStr {
 
 						ifStats.IfHCInOctets = ifInList[ti].Value.(int64)
 						ifStats.IfHCOutOctets = ifOutList[ti].Value.(int64)
@@ -109,29 +119,24 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	return ifStatsList, nil
 }
 
+func ListIfName(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, ifNameOid)
+}
+
 func ListIfHCInOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	oid := "1.3.6.1.2.1.31.1.1.1.6"
-	RunSnmpRetry(ip, community, timeout, ch, retry, oid)
+	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCInOid)
 }
 
 func ListIfHCOutOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	oid := "1.3.6.1.2.1.31.1.1.1.10"
-	RunSnmpRetry(ip, community, timeout, ch, retry, oid)
+	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCOutOid)
 }
 
 func ListIfHCInUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	oid := "1.3.6.1.2.1.31.1.1.1.7"
-	RunSnmpRetry(ip, community, timeout, ch, retry, oid)
+	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCInPktsOid)
 }
 
 func ListIfHCOutUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	oid := "1.3.6.1.2.1.31.1.1.1.11"
-	RunSnmpRetry(ip, community, timeout, ch, retry, oid)
-}
-
-func ListIfName(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	oid := "1.3.6.1.2.1.31.1.1.1.1"
-	RunSnmpRetry(ip, community, timeout, ch, retry, oid)
+	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCOutPktsOid)
 }
 
 func RunSnmpRetry(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, oid string) {
