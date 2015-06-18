@@ -117,13 +117,28 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 
 		list := strings.Split(out, "IF-MIB")
 		for _, v := range list {
+
+			defer func() {
+				if r := recover(); r != nil {
+					log.Println("Recovered in WalkIf", r)
+				}
+			}()
+
 			if len(v) > 0 && strings.Contains(v, "=") {
 				vt := strings.Split(v, "=")
-				ifIndex := strings.Split(vt[0], ".")[1]
-				ifIndex = strings.TrimSpace(ifIndex)
 
-				ifName := strings.Split(vt[1], ":")[1]
-				ifName = strings.TrimSpace(ifName)
+				var ifIndex, ifName string
+				if strings.Contains(vt[0], ".") {
+					ifIndex = strings.Split(vt[0], ".")[1]
+					ifIndex = strings.TrimSpace(ifIndex)
+
+				}
+
+				if strings.Contains(vt[1], ":") {
+					ifName = strings.Split(vt[1], ":")[1]
+					ifName = strings.TrimSpace(ifName)
+				}
+
 				result[ifIndex] = ifName
 			}
 		}
