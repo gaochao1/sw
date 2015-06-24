@@ -11,8 +11,10 @@ package sw
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -120,6 +122,20 @@ func parseICMPEcho(b []byte) (*icmpEcho, error) {
 		copy(p.Data, b[4:])
 	}
 	return p, nil
+}
+
+func PingRtt(address string, timeout int) (float64, error) {
+	now := time.Now()
+
+	err := Pinger(address, timeout)
+
+	end := time.Now()
+	d := end.Sub(now)
+
+	rttStr := fmt.Sprintf("%.3f", float64(d.Nanoseconds())/1000000.0)
+	rtt, _ := strconv.ParseFloat(rttStr, 64)
+
+	return rtt, err
 }
 
 func Ping(address string, timeout int) bool {
