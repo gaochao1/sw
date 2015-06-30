@@ -66,12 +66,12 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 
 				ifStats.IfIndex, _ = strconv.Atoi(ifIndex)
 
-				ifStats.IfHCInOctets, _ = strconv.ParseInt(ifInMap[ifIndex], 10, 64)
-				ifStats.IfHCOutOctets, _ = strconv.ParseInt(ifOutMap[ifIndex], 10, 64)
+				ifStats.IfHCInOctets, _ = strconv.ParseUint(ifInMap[ifIndex], 10, 64)
+				ifStats.IfHCOutOctets, _ = strconv.ParseUint(ifOutMap[ifIndex], 10, 64)
 
 				if ignorePkt == false {
-					ifStats.IfHCInUcastPkts, _ = strconv.ParseInt(ifInPktMap[ifIndex], 10, 64)
-					ifStats.IfHCOutUcastPkts, _ = strconv.ParseInt(ifOutPktMap[ifIndex], 10, 64)
+					ifStats.IfHCInUcastPkts, _ = strconv.ParseUint(ifInPktMap[ifIndex], 10, 64)
+					ifStats.IfHCOutUcastPkts, _ = strconv.ParseUint(ifOutPktMap[ifIndex], 10, 64)
 				}
 
 				ifStats.TS = now

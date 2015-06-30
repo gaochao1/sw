@@ -2,7 +2,7 @@ package sw
 
 import (
 	"fmt"
-	"github.com/alouca/gosnmp"
+	"github.com/gaochao1/gosnmp"
 	"log"
 	"strconv"
 	"strings"
@@ -22,10 +22,10 @@ const (
 type IfStats struct {
 	IfName           string
 	IfIndex          int
-	IfHCInOctets     int64
-	IfHCOutOctets    int64
-	IfHCInUcastPkts  int64
-	IfHCOutUcastPkts int64
+	IfHCInOctets     uint64
+	IfHCOutOctets    uint64
+	IfHCInUcastPkts  uint64
+	IfHCOutUcastPkts uint64
 	TS               int64
 }
 
@@ -97,12 +97,12 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 				for ti, ifHCInOctetsPDU := range ifInList {
 					if strings.Replace(ifHCInOctetsPDU.Name, ifHCInOidPrefix, "", 1) == ifIndexStr {
 
-						ifStats.IfHCInOctets = ifInList[ti].Value.(int64)
-						ifStats.IfHCOutOctets = ifOutList[ti].Value.(int64)
+						ifStats.IfHCInOctets = ifInList[ti].Value.(uint64)
+						ifStats.IfHCOutOctets = ifOutList[ti].Value.(uint64)
 
 						if ignorePkt == false {
-							ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(int64)
-							ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(int64)
+							ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(uint64)
+							ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(uint64)
 						}
 
 						ifStats.TS = now

@@ -1,7 +1,7 @@
 package sw
 
 import (
-	"github.com/alouca/gosnmp"
+	"github.com/gaochao1/gosnmp"
 	"time"
 )
 
