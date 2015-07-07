@@ -38,12 +38,9 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 		}
 	case "Huawei":
 		oid = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.7.16842753"
-	case "H3C":
-		oid = "1.3.6.1.4.1.25506.2.6.1.1.1.1.8.74"
-	case "H3C_V5":
-		oid = "1.3.6.1.4.1.25506.2.6.1.1.1.1.8.74"
-	case "H3C_V7":
-		oid = "1.3.6.1.4.1.25506.2.6.1.1.1.1.8.212"
+	case "H3C", "H3C_V5", "H3C_V7":
+		oid = "1.3.6.1.4.1.25506.2.6.1.1.1.1.8"
+		return getH3Ccpumem(ip, community, oid, timeout, retry)
 	default:
 		return 0, err
 	}
