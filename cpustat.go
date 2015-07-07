@@ -16,10 +16,11 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 	case "Cisco":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1"
 	case "Huawei":
-		oid = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5.16842753"
+		oid = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5"
+		return getH3CHWcpumem(ip, community, oid, timeout, retry)
 	case "H3C", "H3C_V5", "H3C_V7":
 		oid = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
-		return getH3Ccpumem(ip, community, oid, timeout, retry)
+		return getH3CHWcpumem(ip, community, oid, timeout, retry)
 	default:
 		return 0, err
 	}
@@ -42,7 +43,7 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 	return 0, err
 }
 
-func getH3Ccpumem(ip, community, oid string, timeout, retry int) (value int, err error) {
+func getH3CHWcpumem(ip, community, oid string, timeout, retry int) (value int, err error) {
 	method := "walk"
 
 	var snmpPDUs []gosnmp.SnmpPDU
