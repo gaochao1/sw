@@ -110,7 +110,7 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 	result := make(map[string]string)
 
 	for i := 0; i < retry; i++ {
-		out, err := cmdTimeout(timeout, "snmpwalk", "-v", "2c", "-c", community, ip, oid)
+		out, err := CmdTimeout(timeout, "snmpwalk", "-v", "2c", "-c", community, ip, oid)
 		if err != nil {
 			log.Println(ip, oid, err)
 		}
@@ -155,7 +155,7 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 	return
 }
 
-func cmdTimeout(timeout int, name string, arg ...string) (string, error) {
+func CmdTimeout(timeout int, name string, arg ...string) (string, error) {
 	cmd := exec.Command(name, arg...)
 
 	var out bytes.Buffer
