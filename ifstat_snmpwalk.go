@@ -111,7 +111,6 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 
 	for i := 0; i < retry; i++ {
 		out, err := CmdTimeout(timeout, "snmpwalk", "-v", "2c", "-c", community, ip, oid)
-		log.Println("Run snmpwalk:", out, err)
 		if err != nil {
 			log.Println(ip, oid, err)
 		}
