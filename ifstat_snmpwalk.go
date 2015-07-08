@@ -111,6 +111,7 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 
 	for i := 0; i < retry; i++ {
 		out, err := CmdTimeout(timeout, "snmpwalk", "-v", "2c", "-c", community, ip, oid)
+		log.Println("Run snmpwalk:", out, err)
 		if err != nil {
 			log.Println(ip, oid, err)
 		}
@@ -129,9 +130,9 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 
 				var ifIndex, ifName string
 				if strings.Contains(vt[0], ".") {
-					ifIndex = strings.Split(vt[0], ".")[1]
+					leftList := strings.Split(vt[0], ".")
+					ifIndex = leftList[len(leftList)-1]
 					ifIndex = strings.TrimSpace(ifIndex)
-
 				}
 
 				if strings.Contains(vt[1], ":") {
