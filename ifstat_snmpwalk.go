@@ -115,7 +115,13 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 			log.Println(ip, oid, err)
 		}
 
-		list := strings.Split(out, "IF-MIB")
+		var list []string
+		if strings.Contains(out, "IF-MIB") {
+			list = strings.Split(out, "IF-MIB")
+		} else {
+			list = strings.Split(out, "iso")
+		}
+
 		for _, v := range list {
 
 			defer func() {
