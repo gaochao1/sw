@@ -75,10 +75,11 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 				}
 
 				ifStats.TS = now
+
+				ifName = strings.Replace(ifname, `"`, "", -1)
 				ifStats.IfName = ifName
 
 				ifStatsList = append(ifStatsList, ifStats)
-
 			}
 		}
 	}
