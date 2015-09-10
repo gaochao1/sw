@@ -15,6 +15,9 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 		oid = "1.3.6.1.4.1.9.9.305.1.1.1.0"
 	case "Cisco":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1"
+	case "Cisco_IOS_XE","Cisco_IOS_XR":
+		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7"
+		method = "getnext"
 	case "Huawei":
 		oid = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)

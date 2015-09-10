@@ -28,7 +28,13 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 	}
 
 	if strings.Contains(sysDescrLower, "cisco ios") {
-		return "Cisco", err
+		if strings.Contains(sysDescr,"IOS-XE Software") {
+			return "Cisco_IOS_XE", err
+		}else if strings.Contains(sysDescr,"Cisco IOS XR"){
+			return "Cisco_IOS_XR", err
+		}else{
+			return "Cisco", err
+		}
 	}
 
 	if strings.Contains(sysDescrLower, "h3c") {
