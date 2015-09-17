@@ -6,58 +6,28 @@ import (
 )
 
 const (
-	ip        = "172.16.114.129"
+	ip        = "10.10.23.1"
 	community = "public"
-	oid       = "1.3.6.1.2.1.1.5.0"
-	timeout   = 1
+	oid       = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5"
+	timeout   = 5
 	method    = "get"
+	retry     = 5
 )
 
-func Test_ListIfStats(t *testing.T) {
-	//	onlyPrefix := []string{"eth"}
-	onlyPrefix := []string{}
 
-	if np, err := ListIfStats(ip, community, timeout, onlyPrefix); err != nil {
-		t.Error(err)
-	} else {
-		fmt.Println("ListIfStats :", np)
-	}
-}
 
-func Test_ListIfName(t *testing.T) {
-	if np, err := ListIfName(ip, community, timeout); err != nil {
-		t.Error(err)
-	} else {
-		fmt.Println("ListIfName :", np)
-	}
-}
 
-func Test_ListIfHCInOctets(t *testing.T) {
-	if np, err := ListIfHCInOctets(ip, community, timeout); err != nil {
-		t.Error(err)
-	} else {
-		fmt.Println("ListIfHCInOctet :", np)
-	}
-}
-
-func Test_ListIfHCOutOctets(t *testing.T) {
-	if np, err := ListIfHCOutOctets(ip, community, timeout); err != nil {
-		t.Error(err)
-	} else {
-		fmt.Println("ListIfHCOutOctet :", np)
-	}
-}
 
 func Test_CpuUtilization(t *testing.T) {
-	if np, err := CpuUtilization(ip, community, timeout); err != nil {
+	if np, err := CpuUtilization(ip, community, timeout, retry); err != nil {
 		t.Error(err)
 	} else {
-		fmt.Println("CpuUtilization :", np)
+		t.Log("CpuUtilization :",np)
 	}
 }
 
 func Test_MemUtilization(t *testing.T) {
-	if np, err := MemUtilization(ip, community, timeout); err != nil {
+	if np, err := MemUtilization(ip, community, timeout, retry); err != nil {
 		t.Error(err)
 	} else {
 		fmt.Println("MemUtilization :", np)
@@ -69,6 +39,9 @@ func Test_RunSnmp(t *testing.T) {
 		t.Error(err)
 	} else {
 		fmt.Println("Test_RunSnmp :", np)
+		for _,v := range np{
+			fmt.Println("value:",v.Value.(int))
+		}
 	}
 }
 
@@ -88,6 +61,24 @@ func Test_SysVendor(t *testing.T) {
 	}
 }
 
+func Test_ListIfStats(t *testing.T) {
+	ignoreIface := []string{"VLAN","VL","Vl"}
+	ignorePkt := true
+	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry,ignorePkt); err != nil {
+		t.Error(err)
+	} else {
+	fmt.Println("value:", np)
+        }
+}
+func Test_ListIfStatsSnmpWalk(t *testing.T) {
+        ignoreIface := []string{"VLAN","VL","Vl"}
+        ignorePkt := true
+        if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry,ignorePkt); err != nil {
+                t.Error(err)
+        } else {
+        fmt.Println("value:", np)
+        }
+}
 func Test_SysModel(t *testing.T) {
 	if np, err := SysModel(ip, community, timeout); err != nil {
 		t.Error(err)
