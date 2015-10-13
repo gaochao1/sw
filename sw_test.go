@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	ip        = "10.10.23.1"
+	ip        = "10.10.10.1"
 	community = "public"
-	oid       = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5"
+	oid       = "1.3.6.1.4.1.9.9.221.1.1.1.1.7"
 	timeout   = 5
-	method    = "get"
+	method    = "walk"
 	retry     = 5
 )
 
@@ -100,5 +100,13 @@ func Test_SysUpTime(t *testing.T) {
 		t.Error(err)
 	} else {
 		fmt.Println("Test_SysUpTime :", np)
+	}
+}
+
+func Test_ConnectionStat(t *testing.T) {
+	if np, err := ConnectionStat(ip, community, timeout, retry); err != nil {
+		t.Error(err)
+	} else {
+		t.Log("ConnectionStat :",np)
 	}
 }
