@@ -57,6 +57,10 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 	if strings.Contains(sysDescrLower, "huawei") {
 		return "Huawei", err
 	}
+	
+	if strings.Contains(sysDescrLower,"ruijie") {
+		return "Ruijie", err
+	}
 
 	if strings.Contains(sysDescrLower, "linux") {
 		return "Linux", err

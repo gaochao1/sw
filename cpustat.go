@@ -27,6 +27,9 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 	case "H3C", "H3C_V5", "H3C_V7":
 		oid = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)
+	case "Ruijie":
+		oid = "1.3.6.1.4.1.4881.1.1.10.2.36.1.1.2.0"
+		return getRuijiecpumem(ip, community, oid, timeout, retry)
 	default:
 		return 0, err
 	}
@@ -95,4 +98,20 @@ func getH3CHWcpumem(ip, community, oid string, timeout, retry int) (value int, e
 	}
 
 	return value, err
+}
+
+func getRuijiecpumem(ip, community, oid string, timeout, retry int) (value int, err error) {
+	method := "get"
+
+	var snmpPDUs []gosnmp.SnmpPDU
+
+	for i := 0; i < retry; i++ {
+		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
+		if len(snmpPDUs) > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	return snmpPDUs[0].Value.(int),err
 }
