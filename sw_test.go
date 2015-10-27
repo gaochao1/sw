@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	ip        = "10.10.23.1"
+	ip        = "10.10.35.1"
 	community = "public"
-	oid       = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5"
+	oid       = "1.3.6.1.2.1.31.1.1.1.6"
 	timeout   = 5
-	method    = "get"
+	method    = "walk"
 	retry     = 5
 )
 
@@ -40,7 +40,7 @@ func Test_RunSnmp(t *testing.T) {
 	} else {
 		fmt.Println("Test_RunSnmp :", np)
 		for _,v := range np{
-			fmt.Println("value:",v.Value.(int))
+			fmt.Println("value:",v.Value.(uint64))
 		}
 	}
 }
@@ -64,7 +64,7 @@ func Test_SysVendor(t *testing.T) {
 func Test_ListIfStats(t *testing.T) {
 	ignoreIface := []string{"VLAN","VL","Vl"}
 	ignorePkt := true
-	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry,ignorePkt); err != nil {
+	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry, ignorePkt); err != nil {
 		t.Error(err)
 	} else {
 	fmt.Println("value:", np)
@@ -102,3 +102,12 @@ func Test_SysUpTime(t *testing.T) {
 		fmt.Println("Test_SysUpTime :", np)
 	}
 }
+
+func Test_ConnectionStat(t *testing.T) {
+	if np, err := ConnectionStat(ip, community, timeout, retry); err != nil {
+		t.Error(err)
+	} else {
+		t.Log("ConnectionStat :",np)
+	}
+}
+
