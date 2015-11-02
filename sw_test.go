@@ -3,15 +3,20 @@ package sw
 import (
 	"fmt"
 	"testing"
+	"github.com/gaochao1/gosnmp"
+	"time"
 )
 
 const (
-	ip        = "10.10.35.1"
+	ip        = "10.10.10.1"
 	community = "public"
 	oid       = "1.3.6.1.2.1.31.1.1.1.6"
 	timeout   = 5
 	method    = "walk"
 	retry     = 5
+	iprange   = "10.10.10.1/24"
+	pingIp	  = "10.10.10.1"
+	pingtimeout = 1000
 )
 
 
@@ -35,7 +40,16 @@ func Test_MemUtilization(t *testing.T) {
 }
 
 func Test_RunSnmp(t *testing.T) {
-	if np, err := RunSnmp(ip, community, oid, method, timeout); err != nil {
+	var np []gosnmp.SnmpPDU
+	var err error
+	for i := 0; i < retry; i++ {
+		np, err = RunSnmp(ip, community, oid, method, timeout)
+		if len(np) > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	if err != nil {
 		t.Error(err)
 	} else {
 		fmt.Println("Test_RunSnmp :", np)
@@ -111,3 +125,13 @@ func Test_ConnectionStat(t *testing.T) {
 	}
 }
 
+func Test_ParseIp(t *testing.T) {
+	np := ParseIp(iprange)
+	t.Log("aliveip:",np)
+}
+
+func Test_PingRtt(t *testing.T) {
+	rtt, err := PingRtt(pingIp, pingtimeout)
+	t.Log("rtt:",rtt)
+	t.Log("err:",err)
+}
