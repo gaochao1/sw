@@ -21,7 +21,7 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 	switch vendor {
 	case "Cisco_NX":
 		oid = "1.3.6.1.4.1.9.9.305.1.1.2.0"
-	case "Cisco", "Cisco_IOS_XE":
+	case "Cisco", "Cisco_IOS_XE","Cisco_IOS_7200":
 		memUsedOid := "1.3.6.1.4.1.9.9.48.1.1.1.5.1"
 		snmpMemUsed, _ := RunSnmp(ip, community, memUsedOid, method, timeout)
 
@@ -103,10 +103,10 @@ func getCisco_IOS_XR_Mem(ip, community string, timeout, retry int)(int,error){
 
 func getCisco_ASA_Mem(ip, community string, timeout, retry int)(int,error){
 	method := "walk"
-	memUsedOid := "1.3.6.1.4.1.9.9.221.1.1.1.1.7"
+	memUsedOid := "1.3.6.1.4.1.9.9.221.1.1.1.1.18"
 	snmpMemUsed, err := RunSnmp(ip, community, memUsedOid, method, timeout)
 
-	memFreeOid := "1.3.6.1.4.1.9.9.221.1.1.1.1.8"
+	memFreeOid := "1.3.6.1.4.1.9.9.221.1.1.1.1.20"
 	snmpMemFree, err := RunSnmp(ip, community, memFreeOid, method, timeout)
 	if &snmpMemFree[0] != nil && &snmpMemUsed[0] != nil {
 		memUsed := snmpMemUsed[0].Value.(int)
