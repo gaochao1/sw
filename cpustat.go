@@ -19,11 +19,17 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7"
 		method = "getnext"
 	case "Cisco_ASA":
+		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7"
+		return getCiscoASAcpu(ip,community,oid,timeout,retry)
+	case "Cisco_ASA_OLD":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.4"
 		return getCiscoASAcpu(ip,community,oid,timeout,retry)
 	case "Huawei":
 		oid = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)
+	case "Huawei_ME60":
+		oid = "1.3.6.1.4.1.2011.6.3.4.1.2"
+		return getHuawei_ME60cpu(ip,community,oid,timeout,retry)
 	case "H3C", "H3C_V5", "H3C_V7":
 		oid = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)
@@ -53,27 +59,13 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 }
 
 func getCiscoASAcpu(ip,community,oid string,timeout,retry int) (value int,err error){
-	var snmpPDUs []gosnmp.SnmpPDU
-	method := "walk"
-	for i := 0; i < retry; i++ {
-		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
-		if len(snmpPDUs) > 0 {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
+	CPU_Value_SUM, CPU_Count, err := snmp_walk_sum(ip, community, oid, timeout, retry)
+	if err == nil{
+		if CPU_Count > 0{
+			return int(CPU_Value_SUM/uint64(CPU_Count)), err
 	}
-	var cpu_Values []int
-	if err == nil {
-		for _, pdu := range snmpPDUs {
-			cpu_Values = append(cpu_Values,pdu.Value.(int))
-		}
 	}
-	CPU_Value_SUM := 0
-	for _, value := range cpu_Values{
-		CPU_Value_SUM = CPU_Value_SUM + value
-	}
-	
-	return int(CPU_Value_SUM/len(cpu_Values)), err	
+	return 0, err			
 }
 
 
@@ -114,4 +106,39 @@ func getRuijiecpumem(ip, community, oid string, timeout, retry int) (value int, 
 	}
 
 	return snmpPDUs[0].Value.(int),err
+}
+
+func getHuawei_ME60cpu(ip,community,oid string,timeout,retry int) (value int,err error){
+	CPU_Value_SUM, CPU_Count, err := snmp_walk_sum(ip, community, oid, timeout, retry)
+	if err == nil{
+		if CPU_Count > 0{
+			return int(CPU_Value_SUM/uint64(CPU_Count)), err
+	}
+	}
+	
+	return 0, err		
+}
+
+func snmp_walk_sum(ip,community,oid string,timeout,retry int) (value_sum uint64,value_count int,err error){
+	var snmpPDUs []gosnmp.SnmpPDU
+	method := "walk"
+	for i := 0; i < retry; i++ {
+		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
+		if len(snmpPDUs) > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	var Values []uint64
+	if err == nil {
+		for _, pdu := range snmpPDUs {
+			Values = append(Values,pdu.Value.(uint64))
+		}
+	}
+	var Value_SUM uint64
+	Value_SUM = 0
+	for _, value := range Values{
+		Value_SUM = Value_SUM + value
+	}
+	return Value_SUM, len(Values), err	
 }

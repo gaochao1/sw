@@ -5,12 +5,13 @@ import (
 	"testing"
 	"github.com/gaochao1/gosnmp"
 	"time"
+	"strconv"
 )
 
 const (
-	ip        = "10.10.10.1"
-	community = "public"
-	oid       = "1.3.6.1.2.1.31.1.1.1.6"
+	ip        = "202.120.95.254"
+	community = "ecnu-changpan"
+	oid       = "1.3.6.1.4.1.2011.6.3.5.1.1.3"
 	timeout   = 5
 	method    = "walk"
 	retry     = 5
@@ -54,17 +55,18 @@ func Test_RunSnmp(t *testing.T) {
 	} else {
 		fmt.Println("Test_RunSnmp :", np)
 		for _,v := range np{
-			fmt.Println("value:",v.Value.(uint64))
+			fmt.Println("value:",v.Value.(int))
 		}
 	}
 }
 
 func Test_SysDescr(t *testing.T) {
-	if np, err := SysDescr(ip, community, timeout); err != nil {
-		t.Error(err)
-	} else {
-		fmt.Println("Test_SysDescr :", np)
-	}
+	np, err := SysDescr(ip, community, timeout)
+	t.Error(err)
+	version_number,err := strconv.ParseFloat(getVersionNumber(np),32)
+	t.Error(err)
+	fmt.Println("Test_SysDescr :", np)
+	fmt.Println("Version_number:",version_number)
 }
 
 func Test_SysVendor(t *testing.T) {

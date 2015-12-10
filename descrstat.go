@@ -2,6 +2,7 @@ package sw
 
 import (
 	"strings"
+	"strconv"
 )
 
 func SysDescr(ip, community string, timeout int) (string, error) {
@@ -37,10 +38,14 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 		}
 	}
 
-	if strings.Contains(sysDescrLower,"cisco adaptive security appliance"){
+	if strings.Contains(sysDescrLower,"cisco adaptive security appliance") {
+		version_number,err := strconv.ParseFloat(getVersionNumber(sysDescr),32)
+		if err == nil && version_number < 9.2 {
+			return "Cisco_ASA_OLD", err
+		}
 		return "Cisco_ASA", err
 	}
-	if strings.Contains(sysDescrLower,"cisco internetwork operating system software") || strings.Contains(sysDescrLower,"7200 software"){
+	if strings.Contains(sysDescrLower,"cisco internetwork operating system software") && strings.Contains(sysDescrLower,"7200 software"){
 		return "Cisco_IOS_7200", err
 	}
 	if strings.Contains(sysDescrLower, "h3c") {
@@ -57,6 +62,9 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 	}
 
 	if strings.Contains(sysDescrLower, "huawei") {
+		if strings.Contains(sysDescr, "MultiserviceEngine 60"){
+			return "Huawei_ME60", err
+		}
 		return "Huawei", err
 	}
 	
@@ -69,4 +77,16 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 	}
 
 	return "", err
+}
+
+func getVersionNumber(sysdescr string) (string) {
+	version_number := ""
+	s := strings.Fields(sysdescr)
+	for index,value := range s {
+		if strings.ToLower(value) == "version"{
+			version_number = s[index+1]}
+	}
+	version_number = strings.Replace(version_number,"(","",-1)
+	version_number = strings.Replace(version_number,")","",-1)
+	return version_number
 }

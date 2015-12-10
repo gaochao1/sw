@@ -9,7 +9,7 @@ func ConnectionStat(ip, community string, timeout, retry int) (int, error) {
 	method := "get"
 	var oid string
 	switch vendor {
-	case "Cisco_ASA":
+	case "Cisco_ASA","Cisco_ASA_OLD":
 		oid = "1.3.6.1.4.1.9.9.147.1.2.2.2.1.5.40.6"
 	default:
 		return 0, err
