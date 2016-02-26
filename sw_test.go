@@ -2,33 +2,29 @@ package sw
 
 import (
 	"fmt"
-	"testing"
 	"github.com/gaochao1/gosnmp"
-	"time"
 	"strconv"
+	"testing"
+	"time"
 )
 
 const (
-	ip        = "202.120.95.254"
-	community = "ecnu-changpan"
-	oid       = "1.3.6.1.4.1.2011.6.3.5.1.1.3"
-	timeout   = 5
-	method    = "walk"
-	retry     = 5
-	iprange   = "10.10.10.1/24"
-	pingIp	  = "10.10.10.1"
+	ip          = "10.10.10.252"
+	community   = "ecnu-changpan"
+	oid         = "1.3.6.1.2.1.31.1.1.1.10"
+	timeout     = 2000
+	method      = "walk"
+	retry       = 5
+	iprange     = "10.10.55.1/24"
+	pingIp      = "123.125.114.144"
 	pingtimeout = 1000
 )
-
-
-
-
 
 func Test_CpuUtilization(t *testing.T) {
 	if np, err := CpuUtilization(ip, community, timeout, retry); err != nil {
 		t.Error(err)
 	} else {
-		t.Log("CpuUtilization :",np)
+		t.Log("CpuUtilization :", np)
 	}
 }
 
@@ -54,19 +50,16 @@ func Test_RunSnmp(t *testing.T) {
 		t.Error(err)
 	} else {
 		fmt.Println("Test_RunSnmp :", np)
-		for _,v := range np{
-			fmt.Println("value:",v.Value.(int))
-		}
 	}
 }
 
 func Test_SysDescr(t *testing.T) {
 	np, err := SysDescr(ip, community, timeout)
 	t.Error(err)
-	version_number,err := strconv.ParseFloat(getVersionNumber(np),32)
+	version_number, err := strconv.ParseFloat(getVersionNumber(np), 32)
 	t.Error(err)
 	fmt.Println("Test_SysDescr :", np)
-	fmt.Println("Version_number:",version_number)
+	fmt.Println("Version_number:", version_number)
 }
 
 func Test_SysVendor(t *testing.T) {
@@ -78,22 +71,22 @@ func Test_SysVendor(t *testing.T) {
 }
 
 func Test_ListIfStats(t *testing.T) {
-	ignoreIface := []string{"VLAN","VL","Vl"}
+	ignoreIface := []string{"VLAN", "VL", "Vl"}
 	ignorePkt := true
 	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry, ignorePkt); err != nil {
 		t.Error(err)
 	} else {
-	fmt.Println("value:", np)
-        }
+		fmt.Println("value:", np)
+	}
 }
 func Test_ListIfStatsSnmpWalk(t *testing.T) {
-        ignoreIface := []string{"VLAN","VL","Vl"}
-        ignorePkt := true
-        if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry,ignorePkt); err != nil {
-                t.Error(err)
-        } else {
-        fmt.Println("value:", np)
-        }
+	ignoreIface := []string{"VLAN", "VL", "Vl"}
+	ignorePkt := true
+	if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry, ignorePkt); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println("value:", np)
+	}
 }
 func Test_SysModel(t *testing.T) {
 	if np, err := SysModel(ip, community, timeout); err != nil {
@@ -123,17 +116,22 @@ func Test_ConnectionStat(t *testing.T) {
 	if np, err := ConnectionStat(ip, community, timeout, retry); err != nil {
 		t.Error(err)
 	} else {
-		t.Log("ConnectionStat :",np)
+		t.Log("ConnectionStat :", np)
 	}
 }
 
 func Test_ParseIp(t *testing.T) {
 	np := ParseIp(iprange)
-	t.Log("aliveip:",np)
+	t.Log("aliveip:", np)
 }
 
 func Test_PingRtt(t *testing.T) {
 	rtt, err := PingRtt(pingIp, pingtimeout)
-	t.Log("rtt:",rtt)
-	t.Log("err:",err)
+	t.Log("rtt:", rtt)
+	t.Log("err:", err)
+}
+
+func Test_Ping(t *testing.T) {
+	r := Ping(pingIp, pingtimeout)
+	t.Log(r)
 }

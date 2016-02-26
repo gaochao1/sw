@@ -11,21 +11,29 @@ import (
 
 func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool) ([]IfStats, error) {
 	var ifStatsList []IfStats
-
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered in ListIfStats_SnmpWalk", r)
+		}
+	}()
 	chIfInMap := make(chan map[string]string)
 	chIfOutMap := make(chan map[string]string)
 
 	chIfNameMap := make(chan map[string]string)
+	chIfStatusMap := make(chan map[string]string)
 
 	go WalkIfIn(ip, community, timeout, chIfInMap, retry)
 	go WalkIfOut(ip, community, timeout, chIfOutMap, retry)
 
 	go WalkIfName(ip, community, timeout, chIfNameMap, retry)
+	go WalkIfOperStatus(ip, community, timeout, chIfStatusMap, retry)
 
 	ifInMap := <-chIfInMap
 	ifOutMap := <-chIfOutMap
 
 	ifNameMap := <-chIfNameMap
+
+	ifStatusMap := <-chIfStatusMap
 
 	chIfInPktMap := make(chan map[string]string)
 	chIfOutPktMap := make(chan map[string]string)
@@ -55,16 +63,14 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 				}
 			}
 
-			defer func() {
-				if r := recover(); r != nil {
-					log.Println("Recovered in ListIfStats_SnmpWalk", r)
-				}
-			}()
-
 			if check {
 				var ifStats IfStats
-
+				var ifstatus_string string
 				ifStats.IfIndex, _ = strconv.Atoi(ifIndex)
+				ifstatus_string = ifStatusMap[ifIndex]
+				ifstatus_string = strings.TrimSpace(ifstatus_string)
+				ifstatus := ifstatus_string[(len(ifstatus_string) - 2):(len(ifstatus_string) - 1)]
+				ifStats.IfOperStatus, _ = strconv.Atoi(ifstatus)
 
 				ifStats.IfHCInOctets, _ = strconv.ParseUint(ifInMap[ifIndex], 10, 64)
 				ifStats.IfHCOutOctets, _ = strconv.ParseUint(ifOutMap[ifIndex], 10, 64)
@@ -85,6 +91,10 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 	}
 
 	return ifStatsList, nil
+}
+
+func WalkIfOperStatus(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifOperStatusOid, community, timeout, retry, ch)
 }
 
 func WalkIfName(ip, community string, timeout int, ch chan map[string]string, retry int) {
@@ -134,7 +144,7 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 			if len(v) > 0 && strings.Contains(v, "=") {
 				vt := strings.Split(v, "=")
 
-				var ifIndex, ifName string
+				var ifIndex, ifValue string
 				if strings.Contains(vt[0], ".") {
 					leftList := strings.Split(vt[0], ".")
 					ifIndex = leftList[len(leftList)-1]
@@ -142,11 +152,11 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 				}
 
 				if strings.Contains(vt[1], ":") {
-					ifName = strings.Split(vt[1], ":")[1]
-					ifName = strings.TrimSpace(ifName)
+					ifValue = strings.Split(vt[1], ":")[1]
+					ifValue = strings.TrimSpace(ifValue)
 				}
 
-				result[ifIndex] = ifName
+				result[ifIndex] = ifValue
 			}
 		}
 

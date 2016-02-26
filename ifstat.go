@@ -17,6 +17,7 @@ const (
 	ifHCOutOid      = "1.3.6.1.2.1.31.1.1.1.10"
 	ifHCInPktsOid   = "1.3.6.1.2.1.31.1.1.1.7"
 	ifHCOutPktsOid  = "1.3.6.1.2.1.31.1.1.1.11"
+	ifOperStatusOid = "1.3.6.1.2.1.2.2.1.8"
 )
 
 type IfStats struct {
@@ -26,6 +27,7 @@ type IfStats struct {
 	IfHCOutOctets    uint64
 	IfHCInUcastPkts  uint64
 	IfHCOutUcastPkts uint64
+	IfOperStatus     int
 	TS               int64
 }
 
@@ -36,20 +38,29 @@ func (this *IfStats) String() string {
 func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool) ([]IfStats, error) {
 	var ifStatsList []IfStats
 
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered in ListIfStats", r)
+		}
+	}()
+
 	chIfInList := make(chan []gosnmp.SnmpPDU)
 	chIfOutList := make(chan []gosnmp.SnmpPDU)
 
 	chIfNameList := make(chan []gosnmp.SnmpPDU)
+	chIfStatusList := make(chan []gosnmp.SnmpPDU)
 
 	go ListIfHCInOctets(ip, community, timeout, chIfInList, retry)
 	go ListIfHCOutOctets(ip, community, timeout, chIfOutList, retry)
-
+	go ListIfOperStatus(ip, community, timeout, chIfStatusList, retry)
 	go ListIfName(ip, community, timeout, chIfNameList, retry)
 
 	ifInList := <-chIfInList
 	ifOutList := <-chIfOutList
 
 	ifNameList := <-chIfNameList
+	ifStatusList := <-chIfStatusList
 
 	chIfInPktList := make(chan []gosnmp.SnmpPDU)
 	chIfOutPktList := make(chan []gosnmp.SnmpPDU)
@@ -64,7 +75,6 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	}
 
 	if len(ifNameList) > 0 && len(ifInList) > 0 && len(ifOutList) > 0 {
-
 		now := time.Now().Unix()
 
 		for _, ifNamePDU := range ifNameList {
@@ -80,12 +90,6 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 					}
 				}
 			}
-
-			defer func() {
-				if r := recover(); r != nil {
-					log.Println("Recovered in ListIfStats", r)
-				}
-			}()
 
 			if check {
 				var ifStats IfStats
@@ -104,7 +108,7 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 							ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(uint64)
 							ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(uint64)
 						}
-
+						ifStats.IfOperStatus = ifStatusList[ti].Value.(int)
 						ifStats.TS = now
 						ifStats.IfName = ifName
 					}
@@ -117,6 +121,10 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	}
 
 	return ifStatsList, nil
+}
+
+func ListIfOperStatus(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, ifOperStatusOid)
 }
 
 func ListIfName(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
@@ -142,9 +150,10 @@ func ListIfHCOutUcastPkts(ip, community string, timeout int, ch chan []gosnmp.Sn
 func RunSnmpRetry(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, oid string) {
 	method := "walk"
 	var snmpPDUs []gosnmp.SnmpPDU
-
 	for i := 0; i < retry; i++ {
-		snmpPDUs, _ = RunSnmp(ip, community, oid, method, timeout)
+		snmpPDUs, err := RunSnmp(ip, community, oid, method, timeout)
+		fmt.Println(snmpPDUs)
+		fmt.Println(err)
 		if len(snmpPDUs) > 0 {
 			ch <- snmpPDUs
 			return

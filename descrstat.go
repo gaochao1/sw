@@ -1,8 +1,8 @@
 package sw
 
 import (
-	"strings"
 	"strconv"
+	"strings"
 )
 
 func SysDescr(ip, community string, timeout int) (string, error) {
@@ -29,23 +29,23 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 	}
 
 	if strings.Contains(sysDescrLower, "cisco ios") {
-		if strings.Contains(sysDescr,"IOS-XE Software") {
+		if strings.Contains(sysDescr, "IOS-XE Software") {
 			return "Cisco_IOS_XE", err
-		}else if strings.Contains(sysDescr,"Cisco IOS XR"){
+		} else if strings.Contains(sysDescr, "Cisco IOS XR") {
 			return "Cisco_IOS_XR", err
-		}else{
+		} else {
 			return "Cisco", err
 		}
 	}
 
-	if strings.Contains(sysDescrLower,"cisco adaptive security appliance") {
-		version_number,err := strconv.ParseFloat(getVersionNumber(sysDescr),32)
+	if strings.Contains(sysDescrLower, "cisco adaptive security appliance") {
+		version_number, err := strconv.ParseFloat(getVersionNumber(sysDescr), 32)
 		if err == nil && version_number < 9.2 {
 			return "Cisco_ASA_OLD", err
 		}
 		return "Cisco_ASA", err
 	}
-	if strings.Contains(sysDescrLower,"cisco internetwork operating system software") && strings.Contains(sysDescrLower,"7200 software"){
+	if strings.Contains(sysDescrLower, "cisco internetwork operating system software") && strings.Contains(sysDescrLower, "7200 software") {
 		return "Cisco_IOS_7200", err
 	}
 	if strings.Contains(sysDescrLower, "h3c") {
@@ -55,21 +55,31 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 
 		if strings.Contains(sysDescr, "Software Version 7") {
 			return "H3C_V7", err
+		}
 
+		if strings.Contains(sysDescr, "Version S9500") {
+			return "H3C_S9500", err
 		}
 
 		return "H3C", err
 	}
 
 	if strings.Contains(sysDescrLower, "huawei") {
-		if strings.Contains(sysDescr, "MultiserviceEngine 60"){
+		if strings.Contains(sysDescr, "MultiserviceEngine 60") {
 			return "Huawei_ME60", err
+		}
+		if strings.Contains(sysDescr, "Version 5.70") {
+			return "Huawei_V5.70", err
 		}
 		return "Huawei", err
 	}
-	
-	if strings.Contains(sysDescrLower,"ruijie") {
+
+	if strings.Contains(sysDescrLower, "ruijie") {
 		return "Ruijie", err
+	}
+
+	if strings.Contains(sysDescrLower, "juniper networks") {
+		return "Juniper", err
 	}
 
 	if strings.Contains(sysDescrLower, "linux") {
@@ -79,14 +89,15 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 	return "", err
 }
 
-func getVersionNumber(sysdescr string) (string) {
+func getVersionNumber(sysdescr string) string {
 	version_number := ""
 	s := strings.Fields(sysdescr)
-	for index,value := range s {
-		if strings.ToLower(value) == "version"{
-			version_number = s[index+1]}
+	for index, value := range s {
+		if strings.ToLower(value) == "version" {
+			version_number = s[index+1]
+		}
 	}
-	version_number = strings.Replace(version_number,"(","",-1)
-	version_number = strings.Replace(version_number,")","",-1)
+	version_number = strings.Replace(version_number, "(", "", -1)
+	version_number = strings.Replace(version_number, ")", "", -1)
 	return version_number
 }

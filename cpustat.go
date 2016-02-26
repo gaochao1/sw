@@ -13,25 +13,31 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 	switch vendor {
 	case "Cisco_NX":
 		oid = "1.3.6.1.4.1.9.9.305.1.1.1.0"
-	case "Cisco","Cisco_IOS_7200":
+	case "Cisco", "Cisco_IOS_7200":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1"
-	case "Cisco_IOS_XE","Cisco_IOS_XR":
+	case "Cisco_IOS_XE", "Cisco_IOS_XR":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7"
 		method = "getnext"
 	case "Cisco_ASA":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7"
-		return getCiscoASAcpu(ip,community,oid,timeout,retry)
+		return getCiscoASAcpu(ip, community, oid, timeout, retry)
 	case "Cisco_ASA_OLD":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.4"
-		return getCiscoASAcpu(ip,community,oid,timeout,retry)
-	case "Huawei":
+		return getCiscoASAcpu(ip, community, oid, timeout, retry)
+	case "Huawei", "Huawei_V5.70":
 		oid = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)
 	case "Huawei_ME60":
 		oid = "1.3.6.1.4.1.2011.6.3.4.1.2"
-		return getHuawei_ME60cpu(ip,community,oid,timeout,retry)
+		return getHuawei_ME60cpu(ip, community, oid, timeout, retry)
 	case "H3C", "H3C_V5", "H3C_V7":
 		oid = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
+		return getH3CHWcpumem(ip, community, oid, timeout, retry)
+	case "H3C_S9500":
+		oid = "1.3.6.1.4.1.2011.10.2.6.1.1.1.1.6"
+		return getH3CHWcpumem(ip, community, oid, timeout, retry)
+	case "Juniper":
+		oid = "1.3.6.1.4.1.2636.3.1.13.1.8"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)
 	case "Ruijie":
 		oid = "1.3.6.1.4.1.4881.1.1.10.2.36.1.1.2.0"
@@ -58,16 +64,15 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 	return 0, err
 }
 
-func getCiscoASAcpu(ip,community,oid string,timeout,retry int) (value int,err error){
+func getCiscoASAcpu(ip, community, oid string, timeout, retry int) (value int, err error) {
 	CPU_Value_SUM, CPU_Count, err := snmp_walk_sum(ip, community, oid, timeout, retry)
-	if err == nil{
-		if CPU_Count > 0{
-			return int(CPU_Value_SUM/uint64(CPU_Count)), err
+	if err == nil {
+		if CPU_Count > 0 {
+			return int(CPU_Value_SUM / CPU_Count), err
+		}
 	}
-	}
-	return 0, err			
+	return 0, err
 }
-
 
 func getH3CHWcpumem(ip, community, oid string, timeout, retry int) (value int, err error) {
 	method := "walk"
@@ -105,21 +110,21 @@ func getRuijiecpumem(ip, community, oid string, timeout, retry int) (value int, 
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	return snmpPDUs[0].Value.(int),err
+	return snmpPDUs[0].Value.(int), err
 }
 
-func getHuawei_ME60cpu(ip,community,oid string,timeout,retry int) (value int,err error){
+func getHuawei_ME60cpu(ip, community, oid string, timeout, retry int) (value int, err error) {
 	CPU_Value_SUM, CPU_Count, err := snmp_walk_sum(ip, community, oid, timeout, retry)
-	if err == nil{
-		if CPU_Count > 0{
-			return int(CPU_Value_SUM/uint64(CPU_Count)), err
+	if err == nil {
+		if CPU_Count > 0 {
+			return int(CPU_Value_SUM / CPU_Count), err
+		}
 	}
-	}
-	
-	return 0, err		
+
+	return 0, err
 }
 
-func snmp_walk_sum(ip,community,oid string,timeout,retry int) (value_sum uint64,value_count int,err error){
+func snmp_walk_sum(ip, community, oid string, timeout, retry int) (value_sum int, value_count int, err error) {
 	var snmpPDUs []gosnmp.SnmpPDU
 	method := "walk"
 	for i := 0; i < retry; i++ {
@@ -129,16 +134,16 @@ func snmp_walk_sum(ip,community,oid string,timeout,retry int) (value_sum uint64,
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	var Values []uint64
+	var Values []int
 	if err == nil {
 		for _, pdu := range snmpPDUs {
-			Values = append(Values,pdu.Value.(uint64))
+			Values = append(Values, pdu.Value.(int))
 		}
 	}
-	var Value_SUM uint64
+	var Value_SUM int
 	Value_SUM = 0
-	for _, value := range Values{
+	for _, value := range Values {
 		Value_SUM = Value_SUM + value
 	}
-	return Value_SUM, len(Values), err	
+	return Value_SUM, len(Values), err
 }
