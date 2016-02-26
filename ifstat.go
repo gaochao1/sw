@@ -151,7 +151,7 @@ func RunSnmpRetry(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, r
 	method := "walk"
 	var snmpPDUs []gosnmp.SnmpPDU
 	for i := 0; i < retry; i++ {
-		snmpPDUs, err := RunSnmp(ip, community, oid, method, timeout)
+		snmpPDUs, _ = RunSnmp(ip, community, oid, method, timeout)
 		if len(snmpPDUs) > 0 {
 			ch <- snmpPDUs
 			return
