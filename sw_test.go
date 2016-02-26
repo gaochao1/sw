@@ -10,10 +10,10 @@ import (
 
 const (
 	ip          = "10.10.10.252"
-	community   = "ecnu-changpan"
-	oid         = "1.3.6.1.2.1.31.1.1.1.10"
+	community   = "123456"
+	oid         = "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1"
 	timeout     = 2000
-	method      = "walk"
+	method      = "get"
 	retry       = 5
 	iprange     = "10.10.55.1/24"
 	pingIp      = "123.125.114.144"

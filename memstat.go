@@ -21,7 +21,7 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 	switch vendor {
 	case "Cisco_NX":
 		oid = "1.3.6.1.4.1.9.9.305.1.1.2.0"
-	case "Cisco", "Cisco_IOS_XE", "Cisco_IOS_7200":
+	case "Cisco", "Cisco_IOS_XE", "Cisco_IOS_7200", "Cisco_12K":
 		memUsedOid := "1.3.6.1.4.1.9.9.48.1.1.1.5.1"
 		snmpMemUsed, _ := RunSnmp(ip, community, memUsedOid, method, timeout)
 
