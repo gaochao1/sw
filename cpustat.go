@@ -27,6 +27,9 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 	case "Huawei", "Huawei_V5.70":
 		oid = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)
+	case "Huawei_V3.10":
+		oid = "1.3.6.1.4.1.2011.6.1.1.1.3"
+		return getH3CHWcpumem(ip, community, oid, timeout, retry)
 	case "Huawei_ME60":
 		oid = "1.3.6.1.4.1.2011.6.3.4.1.2"
 		return getHuawei_ME60cpu(ip, community, oid, timeout, retry)

@@ -77,6 +77,9 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 		if strings.Contains(sysDescr, "Version 5.70") {
 			return "Huawei_V5.70", err
 		}
+		if strings.Contains(sysDescr, "Version 3.10") {
+			return "Huawei_V3.10", err
+		}
 		return "Huawei", err
 	}
 

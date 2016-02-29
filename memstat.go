@@ -44,6 +44,8 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 	case "Huawei", "Huawei_V5.70":
 		oid = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.7"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)
+	case "Huawei_V3.10":
+		return getOldHuawei_Mem(ip, community, timeout, retry)
 	case "Huawei_ME60":
 		return getHuawei_Me60_Mem(ip, community, timeout, retry)
 	case "H3C", "H3C_V5", "H3C_V7":
@@ -104,6 +106,24 @@ func getCisco_IOS_XR_Mem(ip, community string, timeout, retry int) (int, error) 
 		if memUsed+memFree != 0 {
 			memUtili := float64(memUsed) / float64(memUsed+memFree)
 			return int(memUtili * 100), err
+		}
+	}
+	return 0, err
+}
+
+func getOldHuawei_Mem(ip, community string, timeout, retry int) (int, error) {
+	method := "walk"
+	memTotalOid := "1.3.6.1.4.1.2011.6.1.2.1.1.2"
+	snmpMemTotal, err := RunSnmp(ip, community, memTotalOid, method, timeout)
+
+	memFreeOid := "1.3.6.1.4.1.2011.6.1.2.1.1.3"
+	snmpMemFree, err := RunSnmp(ip, community, memFreeOid, method, timeout)
+	if &snmpMemFree[0] != nil && &snmpMemTotal[0] != nil {
+		memTotal := snmpMemTotal[0].Value.(int)
+		memFree := snmpMemFree[0].Value.(int)
+		if memTotal != 0 {
+			memUtili := float64(memTotal - memFree) / float64(memTotal)
+			return int(memUtili * 100), nil
 		}
 	}
 	return 0, err
