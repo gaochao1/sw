@@ -122,7 +122,7 @@ func getOldHuawei_Mem(ip, community string, timeout, retry int) (int, error) {
 		memTotal := snmpMemTotal[0].Value.(int)
 		memFree := snmpMemFree[0].Value.(int)
 		if memTotal != 0 {
-			memUtili := float64(memTotal - memFree) / float64(memTotal)
+			memUtili := float64(memTotal-memFree) / float64(memTotal)
 			return int(memUtili * 100), nil
 		}
 	}
