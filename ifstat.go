@@ -35,9 +35,8 @@ func (this *IfStats) String() string {
 	return fmt.Sprintf("<IfName:%s, IfIndex:%d, IfHCInOctets:%d, IfHCOutOctets:%d>", this.IfName, this.IfIndex, this.IfHCInOctets, this.IfHCOutOctets)
 }
 
-func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool) ([]IfStats, error) {
+func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool) ([]IfStats, error) {
 	var ifStatsList []IfStats
-
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -53,14 +52,13 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 
 	go ListIfHCInOctets(ip, community, timeout, chIfInList, retry)
 	go ListIfHCOutOctets(ip, community, timeout, chIfOutList, retry)
-	go ListIfOperStatus(ip, community, timeout, chIfStatusList, retry)
+
 	go ListIfName(ip, community, timeout, chIfNameList, retry)
 
 	ifInList := <-chIfInList
 	ifOutList := <-chIfOutList
 
 	ifNameList := <-chIfNameList
-	ifStatusList := <-chIfStatusList
 
 	chIfInPktList := make(chan []gosnmp.SnmpPDU)
 	chIfOutPktList := make(chan []gosnmp.SnmpPDU)
@@ -72,6 +70,12 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 		go ListIfHCOutUcastPkts(ip, community, timeout, chIfOutPktList, retry)
 		ifInPktList = <-chIfInPktList
 		ifOutPktList = <-chIfOutPktList
+	}
+
+	var ifStatusList []gosnmp.SnmpPDU
+	if ignoreOperStatus == false {
+		go ListIfOperStatus(ip, community, timeout, chIfStatusList, retry)
+		ifStatusList = <-chIfStatusList
 	}
 
 	if len(ifNameList) > 0 && len(ifInList) > 0 && len(ifOutList) > 0 {
@@ -108,7 +112,9 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 							ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(uint64)
 							ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(uint64)
 						}
-						ifStats.IfOperStatus = ifStatusList[ti].Value.(int)
+						if ignoreOperStatus == false {
+							ifStats.IfOperStatus = ifStatusList[ti].Value.(int)
+						}
 						ifStats.TS = now
 						ifStats.IfName = ifName
 					}

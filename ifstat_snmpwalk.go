@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool) ([]IfStats, error) {
+func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool) ([]IfStats, error) {
 	var ifStatsList []IfStats
 	defer func() {
 		if r := recover(); r != nil {
@@ -26,14 +26,11 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 	go WalkIfOut(ip, community, timeout, chIfOutMap, retry)
 
 	go WalkIfName(ip, community, timeout, chIfNameMap, retry)
-	go WalkIfOperStatus(ip, community, timeout, chIfStatusMap, retry)
 
 	ifInMap := <-chIfInMap
 	ifOutMap := <-chIfOutMap
 
 	ifNameMap := <-chIfNameMap
-
-	ifStatusMap := <-chIfStatusMap
 
 	chIfInPktMap := make(chan map[string]string)
 	chIfOutPktMap := make(chan map[string]string)
@@ -45,6 +42,12 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 		go WalkIfOutPkts(ip, community, timeout, chIfOutPktMap, retry)
 		ifInPktMap = <-chIfInPktMap
 		ifOutPktMap = <-chIfOutPktMap
+	}
+
+	var ifStatusMap map[string]string
+	if ignoreOperStatus == false {
+		go WalkIfOperStatus(ip, community, timeout, chIfStatusMap, retry)
+		ifStatusMap = <-chIfStatusMap
 	}
 
 	if len(ifNameMap) > 0 && len(ifInMap) > 0 && len(ifOutMap) > 0 {
@@ -67,11 +70,6 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 				var ifStats IfStats
 				var ifstatus_string string
 				ifStats.IfIndex, _ = strconv.Atoi(ifIndex)
-				ifstatus_string = ifStatusMap[ifIndex]
-				ifstatus_string = strings.TrimSpace(ifstatus_string)
-				ifstatus := ifstatus_string[(len(ifstatus_string) - 2):(len(ifstatus_string) - 1)]
-				ifStats.IfOperStatus, _ = strconv.Atoi(ifstatus)
-
 				ifStats.IfHCInOctets, _ = strconv.ParseUint(ifInMap[ifIndex], 10, 64)
 				ifStats.IfHCOutOctets, _ = strconv.ParseUint(ifOutMap[ifIndex], 10, 64)
 
@@ -79,7 +77,12 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 					ifStats.IfHCInUcastPkts, _ = strconv.ParseUint(ifInPktMap[ifIndex], 10, 64)
 					ifStats.IfHCOutUcastPkts, _ = strconv.ParseUint(ifOutPktMap[ifIndex], 10, 64)
 				}
-
+				if ignoreOperStatus == false {
+					ifstatus_string = ifStatusMap[ifIndex]
+					ifstatus_string = strings.TrimSpace(ifstatus_string)
+					ifstatus := ifstatus_string[(len(ifstatus_string) - 2):(len(ifstatus_string) - 1)]
+					ifStats.IfOperStatus, _ = strconv.Atoi(ifstatus)
+				}
 				ifStats.TS = now
 
 				ifName = strings.Replace(ifName, `"`, "", -1)

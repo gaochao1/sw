@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	ip          = "10.10.10.252"
+	ip          = "10.10.12.1"
 	community   = "123456"
 	oid         = "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1"
 	timeout     = 2000
@@ -73,7 +73,8 @@ func Test_SysVendor(t *testing.T) {
 func Test_ListIfStats(t *testing.T) {
 	ignoreIface := []string{"VLAN", "VL", "Vl"}
 	ignorePkt := true
-	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry, ignorePkt); err != nil {
+	ignoreOperStatus := false
+	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus); err != nil {
 		t.Error(err)
 	} else {
 		fmt.Println("value:", np)
@@ -82,7 +83,8 @@ func Test_ListIfStats(t *testing.T) {
 func Test_ListIfStatsSnmpWalk(t *testing.T) {
 	ignoreIface := []string{"VLAN", "VL", "Vl"}
 	ignorePkt := true
-	if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry, ignorePkt); err != nil {
+	ignoreOperStatus := true
+	if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus); err != nil {
 		t.Error(err)
 	} else {
 		fmt.Println("value:", np)
