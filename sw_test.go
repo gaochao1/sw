@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	ip          = "10.200.43.38"
+	ip          = "10.10.12.11"
 	community   = "123456"
-	oid         = "1.3.6.1.4.1.2011.6.1.1.1.3.0"
-	timeout     = 2000
-	method      = "get"
+	oid         = "1.3.6.1.2.1.2.2.1.8"
+	timeout     = 1000
+	method      = "walk"
 	retry       = 5
 	iprange     = "10.10.55.1/24"
 	pingIp      = "123.125.114.144"
@@ -49,7 +49,10 @@ func Test_RunSnmp(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		fmt.Println("Test_RunSnmp :", np)
+		for _, v := range np {
+			fmt.Println("Test_RunSnmp :", v.Value.(int))
+		}
+
 	}
 }
 
@@ -74,7 +77,9 @@ func Test_ListIfStats(t *testing.T) {
 	ignoreIface := []string{"VLAN", "VL", "Vl"}
 	ignorePkt := true
 	ignoreOperStatus := false
-	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus); err != nil {
+	ignoreMulticastPkt := false
+	ignoreBroadcastPkt := false
+	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt); err != nil {
 		t.Error(err)
 	} else {
 		fmt.Println("value:", np)
@@ -84,7 +89,9 @@ func Test_ListIfStatsSnmpWalk(t *testing.T) {
 	ignoreIface := []string{"VLAN", "VL", "Vl"}
 	ignorePkt := true
 	ignoreOperStatus := true
-	if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus); err != nil {
+	ignoreMulticastPkt := false
+	ignoreBroadcastPkt := false
+	if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt); err != nil {
 		t.Error(err)
 	} else {
 		fmt.Println("value:", np)
