@@ -19,7 +19,7 @@ const (
 	ifHCInPktsOidPrefix          = ".1.3.6.1.2.1.31.1.1.1.7."
 	ifHCOutPktsOid               = "1.3.6.1.2.1.31.1.1.1.11"
 	ifOperStatusOid              = "1.3.6.1.2.1.2.2.1.8"
-	ifOperStatusOidPrefix        = ".1.3.6.1.2.1.31.1.1.1.9."
+	ifOperStatusOidPrefix        = ".1.3.6.1.2.1.2.2.1.8."
 	ifHCInBroadcastPktsOid       = "1.3.6.1.2.1.31.1.1.1.9"
 	ifHCInBroadcastPktsOidPrefix = ".1.3.6.1.2.1.31.1.1.1.9."
 	ifHCOutBroadcastPktsOid      = "1.3.6.1.2.1.31.1.1.1.13"
