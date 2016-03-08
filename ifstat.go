@@ -140,48 +140,44 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 
 				for ti, ifHCInOctetsPDU := range ifInList {
 					if strings.Replace(ifHCInOctetsPDU.Name, ifHCInOidPrefix, "", 1) == ifIndexStr {
-
 						ifStats.IfHCInOctets = ifInList[ti].Value.(uint64)
 						ifStats.IfHCOutOctets = ifOutList[ti].Value.(uint64)
 					}
-					if ignorePkt == false {
-						for ti, ifHCInPktsPDU := range ifInPktList {
-							if strings.Replace(ifHCInPktsPDU.Name, ifHCInPktsOidPrefix, "", 1) == ifIndexStr {
-								ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(uint64)
-								ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(uint64)
-							}
-						}
-					}
-					if ignoreBroadcastPkt == false {
-						for ti, ifHCInBroadcastPktPDU := range ifInBroadcastPktList {
-							if strings.Replace(ifHCInBroadcastPktPDU.Name, ifHCInBroadcastPktsOidPrefix, "", 1) == ifIndexStr {
-								ifStats.IfHCInBroadcastPkts = ifInBroadcastPktList[ti].Value.(uint64)
-								ifStats.IfHCOutBroadcastPkts = ifOutBroadcastPktList[ti].Value.(uint64)
-							}
-						}
-					}
-					if ignoreMulticastPkt == false {
-						for ti, ifHCInMulticastPktPDU := range ifInMulticastPktList {
-							if strings.Replace(ifHCInMulticastPktPDU.Name, ifHCInMulticastPktsOidPrefix, "", 1) == ifIndexStr {
-								ifStats.IfHCInMulticastPkts = ifInMulticastPktList[ti].Value.(uint64)
-								ifStats.IfHCOutMulticastPkts = ifOutMulticastPktList[ti].Value.(uint64)
-							}
-						}
-					}
-					if ignoreOperStatus == false {
-						for ti, ifOperStatusPDU := range ifStatusList {
-							if strings.Replace(ifOperStatusPDU.Name, ifOperStatusOidPrefix, "", 1) == ifIndexStr {
-								ifStats.IfOperStatus = ifStatusList[ti].Value.(int)
-							}
-						}
-					}
-					ifStats.TS = now
-					ifStats.IfName = ifName
-
 				}
-
+				if ignorePkt == false {
+					for ti, ifHCInPktsPDU := range ifInPktList {
+						if strings.Replace(ifHCInPktsPDU.Name, ifHCInPktsOidPrefix, "", 1) == ifIndexStr {
+							ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(uint64)
+							ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(uint64)
+						}
+					}
+				}
+				if ignoreBroadcastPkt == false {
+					for ti, ifHCInBroadcastPktPDU := range ifInBroadcastPktList {
+						if strings.Replace(ifHCInBroadcastPktPDU.Name, ifHCInBroadcastPktsOidPrefix, "", 1) == ifIndexStr {
+							ifStats.IfHCInBroadcastPkts = ifInBroadcastPktList[ti].Value.(uint64)
+							ifStats.IfHCOutBroadcastPkts = ifOutBroadcastPktList[ti].Value.(uint64)
+						}
+					}
+				}
+				if ignoreMulticastPkt == false {
+					for ti, ifHCInMulticastPktPDU := range ifInMulticastPktList {
+						if strings.Replace(ifHCInMulticastPktPDU.Name, ifHCInMulticastPktsOidPrefix, "", 1) == ifIndexStr {
+							ifStats.IfHCInMulticastPkts = ifInMulticastPktList[ti].Value.(uint64)
+							ifStats.IfHCOutMulticastPkts = ifOutMulticastPktList[ti].Value.(uint64)
+						}
+					}
+				}
+				if ignoreOperStatus == false {
+					for ti, ifOperStatusPDU := range ifStatusList {
+						if strings.Replace(ifOperStatusPDU.Name, ifOperStatusOidPrefix, "", 1) == ifIndexStr {
+							ifStats.IfOperStatus = ifStatusList[ti].Value.(int)
+						}
+					}
+				}
+				ifStats.TS = now
+				ifStats.IfName = ifName
 				ifStatsList = append(ifStatsList, ifStats)
-
 			}
 		}
 	}
@@ -234,7 +230,6 @@ func RunSnmpRetry(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, r
 	var snmpPDUs []gosnmp.SnmpPDU
 	for i := 0; i < retry; i++ {
 		snmpPDUs, _ = RunSnmp(ip, community, oid, method, timeout)
-		fmt.Println(snmpPDUs)
 		if len(snmpPDUs) > 0 {
 			ch <- snmpPDUs
 			return
