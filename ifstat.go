@@ -52,7 +52,7 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Recovered in ListIfStats", r)
+			log.Println(ip+" Recovered in ListIfStats", r)
 		}
 	}()
 

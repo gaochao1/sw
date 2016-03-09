@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	ip          = "10.10.41.22"
+	ip          = "10.10.41.200"
 	community   = "123456"
-	oid         = "1.3.6.1.2.1.2.2.1.8"
+	oid         = "1.3.6.1.4.1.2011.6.1.2.1.1.2"
 	timeout     = 1000
 	method      = "walk"
 	retry       = 5
@@ -49,9 +49,7 @@ func Test_RunSnmp(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		for _, v := range np {
-			fmt.Println("Test_RunSnmp :", v.Value.(int))
-		}
+		fmt.Println("Test_RunSnmp :", &np)
 
 	}
 }
@@ -90,7 +88,7 @@ func Test_ListIfStatsSnmpWalk(t *testing.T) {
 	ignorePkt := true
 	ignoreOperStatus := true
 	ignoreMulticastPkt := false
-	ignoreBroadcastPkt := false
+	ignoreBroadcastPkt := true
 	if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt); err != nil {
 		t.Error(err)
 	} else {

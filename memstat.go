@@ -1,6 +1,7 @@
 package sw
 
 import (
+	"errors"
 	"github.com/gaochao1/gosnmp"
 	"log"
 	"strconv"
@@ -14,7 +15,7 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Recovered in MemUtilization", r)
+			log.Println(ip+" Recovered in MemUtilization", r)
 		}
 	}()
 
@@ -41,7 +42,7 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 		return getCisco_IOS_XR_Mem(ip, community, timeout, retry)
 	case "Cisco_ASA", "Cisco_ASA_OLD":
 		return getCisco_ASA_Mem(ip, community, timeout, retry)
-	case "Huawei", "Huawei_V5.70":
+	case "Huawei", "Huawei_V5.70", "Huawei_V5.130":
 		oid = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.7"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)
 	case "Huawei_V3.10":
@@ -118,12 +119,15 @@ func getOldHuawei_Mem(ip, community string, timeout, retry int) (int, error) {
 
 	memFreeOid := "1.3.6.1.4.1.2011.6.1.2.1.1.3"
 	snmpMemFree, err := RunSnmp(ip, community, memFreeOid, method, timeout)
-	if &snmpMemFree[0] != nil && &snmpMemTotal[0] != nil {
+	if len(snmpMemFree) == 0 || len(snmpMemTotal) == 0 {
+		err := errors.New(ip + " No Such Object available on this agent at this OID")
+		return 0, err
+	} else {
 		memTotal := snmpMemTotal[0].Value.(int)
 		memFree := snmpMemFree[0].Value.(int)
 		if memTotal != 0 {
 			memUtili := float64(memTotal-memFree) / float64(memTotal)
-			return int(memUtili * 100), nil
+			return int(memUtili * 100), err
 		}
 	}
 	return 0, err

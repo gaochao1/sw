@@ -13,7 +13,7 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 	var ifStatsList []IfStats
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Recovered in ListIfStats_SnmpWalk", r)
+			log.Println(ip+" Recovered in ListIfStats_SnmpWalk", r)
 		}
 	}()
 	chIfInMap := make(chan map[string]string)
