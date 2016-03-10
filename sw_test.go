@@ -9,15 +9,16 @@ import (
 )
 
 const (
-	ip          = "10.10.41.200"
-	community   = "123456"
-	oid         = "1.3.6.1.4.1.2011.6.1.2.1.1.2"
-	timeout     = 1000
-	method      = "walk"
-	retry       = 5
-	iprange     = "10.10.55.1/24"
-	pingIp      = "123.125.114.144"
-	pingtimeout = 1000
+	ip           = "10.10.41.200"
+	community    = "ecnu-changpan"
+	oid          = "1.3.6.1.4.1.2011.6.1.2.1.1.2"
+	timeout      = 1000
+	method       = "walk"
+	retry        = 5
+	iprange      = "10.10.55.1/24"
+	pingIp       = "10.10.10.1"
+	pingtimeout  = 1000
+	fastPingMode = false
 )
 
 func Test_CpuUtilization(t *testing.T) {
@@ -133,12 +134,12 @@ func Test_ParseIp(t *testing.T) {
 }
 
 func Test_PingRtt(t *testing.T) {
-	rtt, err := PingRtt(pingIp, pingtimeout)
+	rtt, err := PingRtt(pingIp, pingtimeout, fastPingMode)
 	t.Log("rtt:", rtt)
 	t.Log("err:", err)
 }
 
 func Test_Ping(t *testing.T) {
-	r := Ping(pingIp, pingtimeout)
+	r := Ping(pingIp, pingtimeout, fastPingMode)
 	t.Log(r)
 }

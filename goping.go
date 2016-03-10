@@ -124,7 +124,7 @@ func parseICMPEcho(b []byte) (*icmpEcho, error) {
 	return p, nil
 }
 
-func PingRtt(address string, timeout int) (float64, error) {
+func goPingRtt(address string, timeout int) (float64, error) {
 	now := time.Now()
 
 	err := Pinger(address, timeout)
@@ -136,11 +136,6 @@ func PingRtt(address string, timeout int) (float64, error) {
 	rtt, _ := strconv.ParseFloat(rttStr, 64)
 
 	return rtt, err
-}
-
-func Ping(address string, timeout int) bool {
-	err := Pinger(address, timeout)
-	return err == nil
 }
 
 func Pinger(address string, timeout int) error {
