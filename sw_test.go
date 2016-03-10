@@ -10,7 +10,7 @@ import (
 
 const (
 	ip           = "10.10.41.200"
-	community    = "ecnu-changpan"
+	community    = "123456"
 	oid          = "1.3.6.1.4.1.2011.6.1.2.1.1.2"
 	timeout      = 1000
 	method       = "walk"
