@@ -9,13 +9,18 @@ import (
 	"time"
 )
 
-func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool) ([]IfStats, error) {
+func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool) ([]IfStats, error) {
 	var ifStatsList []IfStats
-
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in ListIfStats_SnmpWalk", r)
+		}
+	}()
 	chIfInMap := make(chan map[string]string)
 	chIfOutMap := make(chan map[string]string)
 
 	chIfNameMap := make(chan map[string]string)
+	chIfStatusMap := make(chan map[string]string)
 
 	go WalkIfIn(ip, community, timeout, chIfInMap, retry)
 	go WalkIfOut(ip, community, timeout, chIfOutMap, retry)
@@ -39,6 +44,36 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 		ifOutPktMap = <-chIfOutPktMap
 	}
 
+	chIfInBroadcastPktMap := make(chan map[string]string)
+	chIfOutBroadcastPktMap := make(chan map[string]string)
+
+	var ifInBroadcastPktMap, ifOutBroadcastPktMap map[string]string
+
+	if ignoreBroadcastPkt == false {
+		go WalkIfInBroadcastPkts(ip, community, timeout, chIfInBroadcastPktMap, retry)
+		go WalkIfOutBroadcastPkts(ip, community, timeout, chIfOutBroadcastPktMap, retry)
+		ifInBroadcastPktMap = <-chIfInBroadcastPktMap
+		ifOutBroadcastPktMap = <-chIfOutBroadcastPktMap
+	}
+
+	chIfInMulticastPktMap := make(chan map[string]string)
+	chIfOutMulticastPktMap := make(chan map[string]string)
+
+	var ifInMulticastPktMap, ifOutMulticastPktMap map[string]string
+
+	if ignoreMulticastPkt == false {
+		go WalkIfInMulticastPkts(ip, community, timeout, chIfInMulticastPktMap, retry)
+		go WalkIfOutMulticastPkts(ip, community, timeout, chIfOutMulticastPktMap, retry)
+		ifInMulticastPktMap = <-chIfInMulticastPktMap
+		ifOutMulticastPktMap = <-chIfOutMulticastPktMap
+	}
+
+	var ifStatusMap map[string]string
+	if ignoreOperStatus == false {
+		go WalkIfOperStatus(ip, community, timeout, chIfStatusMap, retry)
+		ifStatusMap = <-chIfStatusMap
+	}
+
 	if len(ifNameMap) > 0 && len(ifInMap) > 0 && len(ifOutMap) > 0 {
 
 		now := time.Now().Unix()
@@ -55,17 +90,10 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 				}
 			}
 
-			defer func() {
-				if r := recover(); r != nil {
-					log.Println("Recovered in ListIfStats_SnmpWalk", r)
-				}
-			}()
-
 			if check {
 				var ifStats IfStats
-
+				var ifstatus_string string
 				ifStats.IfIndex, _ = strconv.Atoi(ifIndex)
-
 				ifStats.IfHCInOctets, _ = strconv.ParseUint(ifInMap[ifIndex], 10, 64)
 				ifStats.IfHCOutOctets, _ = strconv.ParseUint(ifOutMap[ifIndex], 10, 64)
 
@@ -73,7 +101,20 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 					ifStats.IfHCInUcastPkts, _ = strconv.ParseUint(ifInPktMap[ifIndex], 10, 64)
 					ifStats.IfHCOutUcastPkts, _ = strconv.ParseUint(ifOutPktMap[ifIndex], 10, 64)
 				}
-
+				if ignoreBroadcastPkt == false {
+					ifStats.IfHCInBroadcastPkts, _ = strconv.ParseUint(ifInBroadcastPktMap[ifIndex], 10, 64)
+					ifStats.IfHCOutBroadcastPkts, _ = strconv.ParseUint(ifOutBroadcastPktMap[ifIndex], 10, 64)
+				}
+				if ignoreMulticastPkt == false {
+					ifStats.IfHCInMulticastPkts, _ = strconv.ParseUint(ifInMulticastPktMap[ifIndex], 10, 64)
+					ifStats.IfHCOutMulticastPkts, _ = strconv.ParseUint(ifOutMulticastPktMap[ifIndex], 10, 64)
+				}
+				if ignoreOperStatus == false {
+					ifstatus_string = ifStatusMap[ifIndex]
+					ifstatus_string = strings.TrimSpace(ifstatus_string)
+					ifstatus := ifstatus_string[(len(ifstatus_string) - 2):(len(ifstatus_string) - 1)]
+					ifStats.IfOperStatus, _ = strconv.Atoi(ifstatus)
+				}
 				ifStats.TS = now
 
 				ifName = strings.Replace(ifName, `"`, "", -1)
@@ -85,6 +126,10 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 	}
 
 	return ifStatsList, nil
+}
+
+func WalkIfOperStatus(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifOperStatusOid, community, timeout, retry, ch)
 }
 
 func WalkIfName(ip, community string, timeout int, ch chan map[string]string, retry int) {
@@ -105,6 +150,22 @@ func WalkIfInPkts(ip, community string, timeout int, ch chan map[string]string, 
 
 func WalkIfOutPkts(ip, community string, timeout int, ch chan map[string]string, retry int) {
 	WalkIf(ip, ifHCOutPktsOid, community, timeout, retry, ch)
+}
+
+func WalkIfInBroadcastPkts(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifHCInBroadcastPktsOid, community, timeout, retry, ch)
+}
+
+func WalkIfOutBroadcastPkts(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifHCOutBroadcastPktsOid, community, timeout, retry, ch)
+}
+
+func WalkIfInMulticastPkts(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifHCInMulticastPktsOid, community, timeout, retry, ch)
+}
+
+func WalkIfOutMulticastPkts(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifHCOutMulticastPktsOid, community, timeout, retry, ch)
 }
 
 func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]string) {
@@ -134,7 +195,7 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 			if len(v) > 0 && strings.Contains(v, "=") {
 				vt := strings.Split(v, "=")
 
-				var ifIndex, ifName string
+				var ifIndex, ifValue string
 				if strings.Contains(vt[0], ".") {
 					leftList := strings.Split(vt[0], ".")
 					ifIndex = leftList[len(leftList)-1]
@@ -142,11 +203,11 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 				}
 
 				if strings.Contains(vt[1], ":") {
-					ifName = strings.Split(vt[1], ":")[1]
-					ifName = strings.TrimSpace(ifName)
+					ifValue = strings.Split(vt[1], ":")[1]
+					ifValue = strings.TrimSpace(ifValue)
 				}
 
-				result[ifIndex] = ifName
+				result[ifIndex] = ifValue
 			}
 		}
 
