@@ -9,7 +9,8 @@ import (
 	"time"
 )
 
-func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool) ([]IfStats, error) {
+func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool, ignoreDiscards bool, ignoreErrors bool) ([]IfStats, error) {
+//func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool) ([]IfStats, error) {
 	var ifStatsList []IfStats
 	defer func() {
 		if r := recover(); r != nil {
@@ -68,6 +69,30 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 		ifOutMulticastPktMap = <-chIfOutMulticastPktMap
 	}
 
+	chIfInDiscardsMap := make(chan map[string]string)
+	chIfOutDiscardsMap := make(chan map[string]string)
+
+	var ifInDiscardsMap, ifOutDiscardsMap map[string]string
+
+	if ignoreDiscards == false {
+		go WalkIfInDiscards(ip, community, timeout, chIfInDiscardsMap, retry)
+		go WalkIfOutDiscards(ip, community, timeout, chIfOutDiscardsMap, retry)
+		ifInDiscardsMap = <-chIfInDiscardsMap
+		ifOutDiscardsMap = <-chIfOutDiscardsMap
+	}
+
+	chIfInErrorsMap := make(chan map[string]string)
+	chIfOutErrorsMap := make(chan map[string]string)
+
+	var ifInErrorsMap, ifOutErrorsMap map[string]string
+
+	if ignoreErrors == false {
+		go WalkIfInErrors(ip, community, timeout, chIfInErrorsMap, retry)
+		go WalkIfOutErrors(ip, community, timeout, chIfOutErrorsMap, retry)
+		ifInErrorsMap = <-chIfInErrorsMap
+		ifOutErrorsMap = <-chIfOutErrorsMap
+	}
+
 	var ifStatusMap map[string]string
 	if ignoreOperStatus == false {
 		go WalkIfOperStatus(ip, community, timeout, chIfStatusMap, retry)
@@ -108,6 +133,14 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 				if ignoreMulticastPkt == false {
 					ifStats.IfHCInMulticastPkts, _ = strconv.ParseUint(ifInMulticastPktMap[ifIndex], 10, 64)
 					ifStats.IfHCOutMulticastPkts, _ = strconv.ParseUint(ifOutMulticastPktMap[ifIndex], 10, 64)
+				}
+				if ignoreDiscards == false {
+					ifStats.IfInDiscards, _ = strconv.Atoi(ifInDiscardsMap[ifIndex])
+					ifStats.IfOutDiscards, _ = strconv.Atoi(ifOutDiscardsMap[ifIndex])
+				}
+				if ignoreErrors == false {
+					ifStats.IfInErrors, _ = strconv.Atoi(ifInErrorsMap[ifIndex])
+					ifStats.IfOutErrors, _ = strconv.Atoi(ifOutErrorsMap[ifIndex])
 				}
 				if ignoreOperStatus == false {
 					ifstatus_string = ifStatusMap[ifIndex]
@@ -166,6 +199,22 @@ func WalkIfInMulticastPkts(ip, community string, timeout int, ch chan map[string
 
 func WalkIfOutMulticastPkts(ip, community string, timeout int, ch chan map[string]string, retry int) {
 	WalkIf(ip, ifHCOutMulticastPktsOid, community, timeout, retry, ch)
+}
+
+func WalkIfInDiscards(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifInDiscardsOid, community, timeout, retry, ch)
+}
+
+func WalkIfOutDiscards(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifOutDiscardsOid, community, timeout, retry, ch)
+}
+
+func WalkIfInErrors(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifInErrorsOid, community, timeout, retry, ch)
+}
+
+func WalkIfOutErrors(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifOutErrorsOid, community, timeout, retry, ch)
 }
 
 func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]string) {
@@ -241,3 +290,4 @@ func CmdTimeout(timeout int, name string, arg ...string) (string, error) {
 
 	return out.String(), err
 }
+
