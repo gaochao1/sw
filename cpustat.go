@@ -1,11 +1,18 @@
 package sw
 
 import (
-	"github.com/gaochao1/gosnmp"
+	"log"
 	"time"
+
+	"github.com/gaochao1/gosnmp"
 )
 
 func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in CPUtilization", r)
+		}
+	}()
 	vendor, err := SysVendor(ip, community, timeout)
 	method := "get"
 	var oid string
@@ -13,7 +20,7 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 	switch vendor {
 	case "Cisco_NX":
 		oid = "1.3.6.1.4.1.9.9.305.1.1.1.0"
-	case "Cisco", "Cisco_IOS_7200", "Cisco_12K":
+	case "Cisco", "Cisco_IOS_7200", "Cisco_old":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1"
 	case "Cisco_IOS_XE", "Cisco_IOS_XR":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7"
@@ -78,6 +85,11 @@ func getCiscoASAcpu(ip, community, oid string, timeout, retry int) (value int, e
 }
 
 func getH3CHWcpumem(ip, community, oid string, timeout, retry int) (value int, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in CPUtilization", r)
+		}
+	}()
 	method := "walk"
 
 	var snmpPDUs []gosnmp.SnmpPDU
@@ -101,6 +113,12 @@ func getH3CHWcpumem(ip, community, oid string, timeout, retry int) (value int, e
 }
 
 func getRuijiecpumem(ip, community, oid string, timeout, retry int) (value int, err error) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in CPUtilization", r)
+		}
+	}()
 	method := "get"
 
 	var snmpPDUs []gosnmp.SnmpPDU
@@ -128,6 +146,11 @@ func getHuawei_ME60cpu(ip, community, oid string, timeout, retry int) (value int
 }
 
 func snmp_walk_sum(ip, community, oid string, timeout, retry int) (value_sum int, value_count int, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in CPUtilization", r)
+		}
+	}()
 	var snmpPDUs []gosnmp.SnmpPDU
 	method := "walk"
 	for i := 0; i < retry; i++ {

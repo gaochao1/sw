@@ -1,8 +1,9 @@
 package sw
 
 import (
-	"github.com/gaochao1/gosnmp"
 	"strings"
+
+	"github.com/gaochao1/gosnmp"
 )
 
 func RunSnmp(ip, community, oid, method string, timeout int) (snmpPDUs []gosnmp.SnmpPDU, err error) {

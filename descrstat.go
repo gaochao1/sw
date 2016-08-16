@@ -1,6 +1,7 @@
 package sw
 
 import (
+	"log"
 	"strconv"
 	"strings"
 )
@@ -10,7 +11,11 @@ func SysDescr(ip, community string, timeout int) (string, error) {
 	method := "get"
 
 	snmpPDUs, err := RunSnmp(ip, community, oid, method, timeout)
-
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in sysDescr", r)
+		}
+	}()
 	if err == nil {
 		for _, pdu := range snmpPDUs {
 			return pdu.Value.(string), err
@@ -29,9 +34,7 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 	}
 
 	if strings.Contains(sysDescr, "Cisco Internetwork Operating System Software") {
-		if strings.Contains(sysDescr, "C12K") {
-			return "Cisco_12K", err
-		}
+		return "Cisco_old", err
 	}
 
 	if strings.Contains(sysDescrLower, "cisco ios") {
@@ -50,9 +53,6 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 			return "Cisco_ASA_OLD", err
 		}
 		return "Cisco_ASA", err
-	}
-	if strings.Contains(sysDescrLower, "cisco internetwork operating system software") && strings.Contains(sysDescrLower, "7200 software") {
-		return "Cisco_IOS_7200", err
 	}
 	if strings.Contains(sysDescrLower, "h3c") {
 		if strings.Contains(sysDescr, "Software Version 5") {

@@ -2,10 +2,11 @@ package sw
 
 import (
 	"errors"
-	"github.com/gaochao1/gosnmp"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/gaochao1/gosnmp"
 )
 
 func MemUtilization(ip, community string, timeout, retry int) (int, error) {
@@ -22,7 +23,7 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 	switch vendor {
 	case "Cisco_NX":
 		oid = "1.3.6.1.4.1.9.9.305.1.1.2.0"
-	case "Cisco", "Cisco_IOS_XE", "Cisco_IOS_7200", "Cisco_12K":
+	case "Cisco", "Cisco_IOS_XE", "Cisco_old":
 		memUsedOid := "1.3.6.1.4.1.9.9.48.1.1.1.5.1"
 		snmpMemUsed, _ := RunSnmp(ip, community, memUsedOid, method, timeout)
 
@@ -83,6 +84,11 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 	return 0, err
 }
 func getCisco_IOS_XR_Mem(ip, community string, timeout, retry int) (int, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in MemUtilization", r)
+		}
+	}()
 	cpuindex := "1.3.6.1.4.1.9.9.109.1.1.1.1.2"
 	method := "getnext"
 	var snmpPDUs []gosnmp.SnmpPDU
@@ -113,6 +119,11 @@ func getCisco_IOS_XR_Mem(ip, community string, timeout, retry int) (int, error) 
 }
 
 func getOldHuawei_Mem(ip, community string, timeout, retry int) (int, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in MemUtilization", r)
+		}
+	}()
 	method := "walk"
 	memTotalOid := "1.3.6.1.4.1.2011.6.1.2.1.1.2"
 	snmpMemTotal, err := RunSnmp(ip, community, memTotalOid, method, timeout)
@@ -134,6 +145,11 @@ func getOldHuawei_Mem(ip, community string, timeout, retry int) (int, error) {
 }
 
 func getCisco_ASA_Mem(ip, community string, timeout, retry int) (int, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in MemUtilization", r)
+		}
+	}()
 	method := "walk"
 	memUsedOid := "1.3.6.1.4.1.9.9.221.1.1.1.1.18"
 	snmpMemUsed, err := RunSnmp(ip, community, memUsedOid, method, timeout)

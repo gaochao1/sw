@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool, ignoreDiscards bool, ignoreErrors bool) ([]IfStats, error) {
-//func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool) ([]IfStats, error) {
+func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool, ignoreDiscards bool, ignoreErrors bool, ignoreUnknownProtos bool, ignoreOutQLen bool) ([]IfStats, error) {
+	//func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool) ([]IfStats, error) {
 	var ifStatsList []IfStats
 	defer func() {
 		if r := recover(); r != nil {
@@ -92,6 +92,24 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 		ifInErrorsMap = <-chIfInErrorsMap
 		ifOutErrorsMap = <-chIfOutErrorsMap
 	}
+	//UnknownProtos
+	chIfInUnknownProtosMap := make(chan map[string]string)
+
+	var ifInUnknownProtosMap map[string]string
+
+	if ignoreUnknownProtos == false {
+		go WalkIfInUnknownProtos(ip, community, timeout, chIfInUnknownProtosMap, retry)
+		ifInUnknownProtosMap = <-chIfInUnknownProtosMap
+	}
+	//QLen
+	chIfOutQLenMap := make(chan map[string]string)
+
+	var ifOutQLenMap map[string]string
+
+	if ignoreOutQLen == false {
+		go WalkIfOutQLen(ip, community, timeout, chIfOutQLenMap, retry)
+		ifOutQLenMap = <-chIfOutQLenMap
+	}
 
 	var ifStatusMap map[string]string
 	if ignoreOperStatus == false {
@@ -141,6 +159,12 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 				if ignoreErrors == false {
 					ifStats.IfInErrors, _ = strconv.Atoi(ifInErrorsMap[ifIndex])
 					ifStats.IfOutErrors, _ = strconv.Atoi(ifOutErrorsMap[ifIndex])
+				}
+				if ignoreUnknownProtos == false {
+					ifStats.IfInUnknownProtos, _ = strconv.Atoi(ifInUnknownProtosMap[ifIndex])
+				}
+				if ignoreOutQLen == false {
+					ifStats.IfOutQLen, _ = strconv.Atoi(ifOutQLenMap[ifIndex])
 				}
 				if ignoreOperStatus == false {
 					ifstatus_string = ifStatusMap[ifIndex]
@@ -217,14 +241,19 @@ func WalkIfOutErrors(ip, community string, timeout int, ch chan map[string]strin
 	WalkIf(ip, ifOutErrorsOid, community, timeout, retry, ch)
 }
 
+func WalkIfInUnknownProtos(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifInUnknownProtosOid, community, timeout, retry, ch)
+}
+
+func WalkIfOutQLen(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifOutQLenOid, community, timeout, retry, ch)
+}
+
 func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]string) {
 	result := make(map[string]string)
 
 	for i := 0; i < retry; i++ {
 		out, err := CmdTimeout(timeout, "snmpwalk", "-v", "2c", "-c", community, ip, oid)
-		if err != nil {
-			log.Println(ip, oid, err)
-		}
 
 		var list []string
 		if strings.Contains(out, "IF-MIB") {
@@ -264,7 +293,9 @@ func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]st
 			ch <- result
 			return
 		}
-
+		if err != nil && i == (retry-1) {
+			log.Println(ip, oid, err)
+		}
 		time.Sleep(100 * time.Millisecond)
 	}
 
@@ -290,4 +321,3 @@ func CmdTimeout(timeout int, name string, arg ...string) (string, error) {
 
 	return out.String(), err
 }
-

@@ -1,11 +1,18 @@
 package sw
 
 import (
-	"github.com/gaochao1/gosnmp"
+	"log"
 	"time"
+
+	"github.com/gaochao1/gosnmp"
 )
 
 func ConnectionStat(ip, community string, timeout, retry int) (int, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in Conntilization", r)
+		}
+	}()
 	vendor, err := SysVendor(ip, community, timeout)
 	method := "get"
 	var oid string

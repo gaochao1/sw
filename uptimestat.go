@@ -2,6 +2,7 @@ package sw
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"strconv"
 	"strings"
@@ -11,7 +12,11 @@ import (
 func SysUpTime(ip, community string, timeout int) (string, error) {
 	oid := "1.3.6.1.2.1.1.3.0"
 	method := "get"
-
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in Uptime", r)
+		}
+	}()
 	snmpPDUs, err := RunSnmp(ip, community, oid, method, timeout)
 
 	if err == nil {

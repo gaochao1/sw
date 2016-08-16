@@ -2,12 +2,12 @@ package sw
 
 import (
 	"fmt"
-	"github.com/gaochao1/gosnmp"
 	"log"
 	"strconv"
 	"strings"
 	"time"
-	//"reflect"
+
+	"github.com/gaochao1/gosnmp"
 )
 
 const (
@@ -35,9 +35,18 @@ const (
 	ifOutDiscardsOid      = "1.3.6.1.2.1.2.2.1.19"
 
 	// Errors配置
-	ifInErrorsOid       = "1.3.6.1.2.1.2.2.1.14"
-	ifInErrorsOidPrefix = ".1.3.6.1.2.1.2.2.1.14."
-	ifOutErrorsOid      = "1.3.6.1.2.1.2.2.1.20"
+	ifInErrorsOid        = "1.3.6.1.2.1.2.2.1.14"
+	ifInErrorsOidPrefix  = ".1.3.6.1.2.1.2.2.1.14."
+	ifOutErrorsOid       = "1.3.6.1.2.1.2.2.1.20"
+	ifOutErrorsOidPrefix = ".1.3.6.1.2.1.2.2.1.20."
+
+	//ifInUnknownProtos 由于未知或不支持的网络协议而丢弃的输入报文的数量
+	ifInUnknownProtosOid    = "1.3.6.1.2.1.2.2.1.15"
+	ifInUnknownProtosPrefix = ".1.3.6.1.2.1.2.2.1.15."
+
+	//ifOutQLen 接口上输出报文队列长度
+	ifOutQLenOid    = "1.3.6.1.2.1.2.2.1.21"
+	ifOutQLenPrefix = ".1.3.6.1.2.1.2.2.1.21."
 )
 
 type IfStats struct {
@@ -51,10 +60,12 @@ type IfStats struct {
 	IfHCOutBroadcastPkts uint64
 	IfHCInMulticastPkts  uint64
 	IfHCOutMulticastPkts uint64
-	IfInDiscards	    int
-	IfOutDiscards       int
-	IfInErrors	    int
-	IfOutErrors       int
+	IfInDiscards         int
+	IfOutDiscards        int
+	IfInErrors           int
+	IfOutErrors          int
+	IfInUnknownProtos    int
+	IfOutQLen            int
 	IfOperStatus         int
 	TS                   int64
 }
@@ -63,8 +74,7 @@ func (this *IfStats) String() string {
 	return fmt.Sprintf("<IfName:%s, IfIndex:%d, IfHCInOctets:%d, IfHCOutOctets:%d>", this.IfName, this.IfIndex, this.IfHCInOctets, this.IfHCOutOctets)
 }
 
-func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool, ignoreDiscards bool, ignoreErrors bool) ([]IfStats, error) {
-//func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool) ([]IfStats, error) {
+func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool, ignoreDiscards bool, ignoreErrors bool, ignoreUnknownProtos bool, ignoreOutQLen bool) ([]IfStats, error) {
 	var ifStatsList []IfStats
 
 	defer func() {
@@ -80,9 +90,13 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	chIfStatusList := make(chan []gosnmp.SnmpPDU)
 
 	go ListIfHCInOctets(ip, community, timeout, chIfInList, retry)
+	time.Sleep(100 * time.Millisecond)
+
 	go ListIfHCOutOctets(ip, community, timeout, chIfOutList, retry)
+	time.Sleep(100 * time.Millisecond)
 
 	go ListIfName(ip, community, timeout, chIfNameList, retry)
+	time.Sleep(100 * time.Millisecond)
 
 	ifInList := <-chIfInList
 	ifOutList := <-chIfOutList
@@ -96,7 +110,9 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 
 	if ignorePkt == false {
 		go ListIfHCInUcastPkts(ip, community, timeout, chIfInPktList, retry)
+		time.Sleep(100 * time.Millisecond)
 		go ListIfHCOutUcastPkts(ip, community, timeout, chIfOutPktList, retry)
+		time.Sleep(100 * time.Millisecond)
 		ifInPktList = <-chIfInPktList
 		ifOutPktList = <-chIfOutPktList
 	}
@@ -108,7 +124,9 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 
 	if ignoreBroadcastPkt == false {
 		go ListIfHCInBroadcastPkts(ip, community, timeout, chIfInBroadcastPktList, retry)
+		time.Sleep(100 * time.Millisecond)
 		go ListIfHCOutBroadcastPkts(ip, community, timeout, chIfOutBroadcastPktList, retry)
+		time.Sleep(100 * time.Millisecond)
 		ifInBroadcastPktList = <-chIfInBroadcastPktList
 		ifOutBroadcastPktList = <-chIfOutBroadcastPktList
 	}
@@ -120,7 +138,9 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 
 	if ignoreMulticastPkt == false {
 		go ListIfHCInMulticastPkts(ip, community, timeout, chIfInMulticastPktList, retry)
+		time.Sleep(100 * time.Millisecond)
 		go ListIfHCOutMulticastPkts(ip, community, timeout, chIfOutMulticastPktList, retry)
+		time.Sleep(100 * time.Millisecond)
 		ifInMulticastPktList = <-chIfInMulticastPktList
 		ifOutMulticastPktList = <-chIfOutMulticastPktList
 	}
@@ -133,11 +153,12 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 
 	if ignoreDiscards == false {
 		go ListIfInDiscards(ip, community, timeout, chIfInDiscardsList, retry)
+		time.Sleep(100 * time.Millisecond)
 		go ListIfOutDiscards(ip, community, timeout, chIfOutDiscardsList, retry)
+		time.Sleep(100 * time.Millisecond)
 		ifInDiscardsList = <-chIfInDiscardsList
 		ifOutDiscardsList = <-chIfOutDiscardsList
 	}
-
 
 	//Errors
 	chIfInErrorsList := make(chan []gosnmp.SnmpPDU)
@@ -147,11 +168,34 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 
 	if ignoreErrors == false {
 		go ListIfInErrors(ip, community, timeout, chIfInErrorsList, retry)
+		time.Sleep(100 * time.Millisecond)
 		go ListIfOutErrors(ip, community, timeout, chIfOutErrorsList, retry)
+		time.Sleep(100 * time.Millisecond)
 		ifInErrorsList = <-chIfInErrorsList
 		ifOutErrorsList = <-chIfOutErrorsList
 	}
 
+	//UnknownProtos
+	chIfInUnknownProtosList := make(chan []gosnmp.SnmpPDU)
+
+	var ifInUnknownProtosList []gosnmp.SnmpPDU
+
+	if ignoreUnknownProtos == false {
+		go ListIfInUnknownProtos(ip, community, timeout, chIfInUnknownProtosList, retry)
+		time.Sleep(100 * time.Millisecond)
+		ifInUnknownProtosList = <-chIfInUnknownProtosList
+	}
+	//QLen
+	chIfOutQLenList := make(chan []gosnmp.SnmpPDU)
+
+	var ifOutQLenList []gosnmp.SnmpPDU
+
+	if ignoreOutQLen == false {
+		go ListIfOutQLen(ip, community, timeout, chIfOutQLenList, retry)
+		time.Sleep(100 * time.Millisecond)
+		ifOutQLenList = <-chIfOutQLenList
+	}
+	// OperStatus
 	var ifStatusList []gosnmp.SnmpPDU
 	if ignoreOperStatus == false {
 		go ListIfOperStatus(ip, community, timeout, chIfStatusList, retry)
@@ -186,6 +230,7 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 					if strings.Replace(ifHCInOctetsPDU.Name, ifHCInOidPrefix, "", 1) == ifIndexStr {
 						ifStats.IfHCInOctets = ifInList[ti].Value.(uint64)
 						ifStats.IfHCOutOctets = ifOutList[ti].Value.(uint64)
+						break
 					}
 				}
 				if ignorePkt == false {
@@ -193,6 +238,7 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 						if strings.Replace(ifHCInPktsPDU.Name, ifHCInPktsOidPrefix, "", 1) == ifIndexStr {
 							ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(uint64)
 							ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(uint64)
+							break
 						}
 					}
 				}
@@ -201,6 +247,7 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 						if strings.Replace(ifHCInBroadcastPktPDU.Name, ifHCInBroadcastPktsOidPrefix, "", 1) == ifIndexStr {
 							ifStats.IfHCInBroadcastPkts = ifInBroadcastPktList[ti].Value.(uint64)
 							ifStats.IfHCOutBroadcastPkts = ifOutBroadcastPktList[ti].Value.(uint64)
+							break
 						}
 					}
 				}
@@ -209,41 +256,59 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 						if strings.Replace(ifHCInMulticastPktPDU.Name, ifHCInMulticastPktsOidPrefix, "", 1) == ifIndexStr {
 							ifStats.IfHCInMulticastPkts = ifInMulticastPktList[ti].Value.(uint64)
 							ifStats.IfHCOutMulticastPkts = ifOutMulticastPktList[ti].Value.(uint64)
+							break
 						}
 					}
 				}
-				
+
 				if ignoreDiscards == false {
 					for ti, ifInDiscardsPDU := range ifInDiscardsList {
-						//log.Print(ifInDiscardsPDU.Name,"+++++++++++++",ifInDiscardsOidPrefix)
 						if strings.Replace(ifInDiscardsPDU.Name, ifInDiscardsOidPrefix, "", 1) == ifIndexStr {
 							ifStats.IfInDiscards = ifInDiscardsList[ti].Value.(int)
 							ifStats.IfOutDiscards = ifOutDiscardsList[ti].Value.(int)
-							//log.Print(reflect.TypeOf(ifStats.IfInDiscards))
-							//log.Print(reflect.TypeOf(ifStats.IfOutDiscards))
-							//log.Print("%v",ifStats.IfInDiscards,ifStats.IfOutDiscards)
+							break
 						}
 					}
 				}
-
 
 				if ignoreErrors == false {
 					for ti, ifInErrorsPDU := range ifInErrorsList {
-						//log.Print(ifInErrorsPDU.Name,"+++++++++++++",ifInErrorsOidPrefix)
 						if strings.Replace(ifInErrorsPDU.Name, ifInErrorsOidPrefix, "", 1) == ifIndexStr {
 							ifStats.IfInErrors = ifInErrorsList[ti].Value.(int)
+							break
+						}
+					}
+					for ti, ifOutErrorsPDU := range ifOutErrorsList {
+						if strings.Replace(ifOutErrorsPDU.Name, ifOutErrorsOidPrefix, "", 1) == ifIndexStr {
 							ifStats.IfOutErrors = ifOutErrorsList[ti].Value.(int)
-							//log.Print(reflect.TypeOf(ifStats.IfInErrors))
-							//log.Print(reflect.TypeOf(ifStats.IfOutErrors))
-							//log.Print("%v",ifStats.IfInErrors,ifStats.IfOutErrors)
+							break
 						}
 					}
 				}
-				
+
 				if ignoreOperStatus == false {
 					for ti, ifOperStatusPDU := range ifStatusList {
 						if strings.Replace(ifOperStatusPDU.Name, ifOperStatusOidPrefix, "", 1) == ifIndexStr {
 							ifStats.IfOperStatus = ifStatusList[ti].Value.(int)
+							break
+						}
+					}
+				}
+
+				if ignoreUnknownProtos == false {
+					for ti, ifInUnknownProtosPDU := range ifInUnknownProtosList {
+						if strings.Replace(ifInUnknownProtosPDU.Name, ifInUnknownProtosPrefix, "", 1) == ifIndexStr {
+							ifStats.IfInUnknownProtos = ifInUnknownProtosList[ti].Value.(int)
+							break
+						}
+					}
+				}
+
+				if ignoreOutQLen == false {
+					for ti, ifOutQLenPDU := range ifOutQLenList {
+						if strings.Replace(ifOutQLenPDU.Name, ifOutQLenPrefix, "", 1) == ifIndexStr {
+							ifStats.IfOutQLen = ifOutQLenList[ti].Value.(int)
+							break
 						}
 					}
 				}
@@ -282,7 +347,7 @@ func ListIfHCInBroadcastPkts(ip, community string, timeout int, ch chan []gosnmp
 }
 
 func ListIfHCOutBroadcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCInBroadcastPktsOid)
+	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCOutBroadcastPktsOid)
 }
 
 func ListIfHCInMulticastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
@@ -313,18 +378,29 @@ func ListIfHCOutUcastPkts(ip, community string, timeout int, ch chan []gosnmp.Sn
 	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCOutPktsOid)
 }
 
+func ListIfInUnknownProtos(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, ifInUnknownProtosOid)
+}
+
+func ListIfOutQLen(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, ifOutQLenOid)
+}
+
 func RunSnmpRetry(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, oid string) {
 	method := "walk"
 	var snmpPDUs []gosnmp.SnmpPDU
+	var err error
 	for i := 0; i < retry; i++ {
-		snmpPDUs, _ = RunSnmp(ip, community, oid, method, timeout)
+		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
 		if len(snmpPDUs) > 0 {
 			ch <- snmpPDUs
 			return
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
+	if err != nil {
+		log.Println(ip, oid, err)
+	}
 	ch <- snmpPDUs
 	return
 }
-

@@ -2,16 +2,17 @@ package sw
 
 import (
 	"fmt"
-	"github.com/gaochao1/gosnmp"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/gaochao1/gosnmp"
 )
 
 const (
 	ip           = "10.10.41.200"
 	community    = "123456"
-	oid          = "1.3.6.1.4.1.2011.6.1.2.1.1.2"
+	oid          = "1.3.6.1.2.1.31.1.1.1.1"
 	timeout      = 1000
 	method       = "walk"
 	retry        = 5
@@ -74,11 +75,15 @@ func Test_SysVendor(t *testing.T) {
 
 func Test_ListIfStats(t *testing.T) {
 	ignoreIface := []string{"VLAN", "VL", "Vl"}
-	ignorePkt := true
+	ignorePkt := false
 	ignoreOperStatus := false
 	ignoreMulticastPkt := false
 	ignoreBroadcastPkt := false
-	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt); err != nil {
+	ignoreDiscards := false
+	ignoreErrors := false
+	ignoreUnknownProtos := false
+	ignoreOutQLen := false
+	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt, ignoreDiscards, ignoreErrors, ignoreUnknownProtos, ignoreOutQLen); err != nil {
 		t.Error(err)
 	} else {
 		fmt.Println("value:", np)
@@ -86,11 +91,15 @@ func Test_ListIfStats(t *testing.T) {
 }
 func Test_ListIfStatsSnmpWalk(t *testing.T) {
 	ignoreIface := []string{"VLAN", "VL", "Vl"}
-	ignorePkt := true
-	ignoreOperStatus := true
-	ignoreMulticastPkt := false
+	ignorePkt := false
+	ignoreOperStatus := false
+	ignoreMulticastPkt := true
 	ignoreBroadcastPkt := true
-	if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt); err != nil {
+	ignoreDiscards := true
+	ignoreErrors := true
+	ignoreUnknownProtos := true
+	ignoreOutQLen := true
+	if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt, ignoreDiscards, ignoreErrors, ignoreUnknownProtos, ignoreOutQLen); err != nil {
 		t.Error(err)
 	} else {
 		fmt.Println("value:", np)
