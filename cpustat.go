@@ -2,6 +2,7 @@ package sw
 
 import (
 	"log"
+	"strings"
 	"time"
 
 	"github.com/gaochao1/gosnmp"
@@ -90,23 +91,28 @@ func getH3CHWcpumem(ip, community, oid string, timeout, retry int) (value int, e
 			log.Println(ip+" Recovered in CPUtilization", r)
 		}
 	}()
-	method := "walk"
-
+	method := "getnext"
+	oidnext := oid
 	var snmpPDUs []gosnmp.SnmpPDU
 
-	for i := 0; i < retry; i++ {
-		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
-		if len(snmpPDUs) > 0 {
+	for {
+		for i := 0; i < retry; i++ {
+			snmpPDUs, err = RunSnmp(ip, community, oidnext, method, timeout)
+			if len(snmpPDUs) > 0 {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		oidnext = snmpPDUs[0].Name
+		if strings.Contains(oidnext, oid) {
+			if snmpPDUs[0].Value.(int) != 0 {
+				value = snmpPDUs[0].Value.(int)
+				break
+			}
+		} else {
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
-	}
 
-	for _, v := range snmpPDUs {
-		if v.Value.(int) != 0 {
-			value = v.Value.(int)
-			break
-		}
 	}
 
 	return value, err

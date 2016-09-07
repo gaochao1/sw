@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	ip           = "10.10.41.200"
-	community    = "123456"
-	oid          = "1.3.6.1.2.1.31.1.1.1.1"
+	ip           = "192.168.101.1"
+	community    = "public"
+	oid          = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
 	timeout      = 1000
 	method       = "walk"
-	retry        = 5
+	retry        = 3
 	iprange      = "10.10.55.1/24"
 	pingIp       = "10.10.10.1"
 	pingtimeout  = 1000
@@ -48,6 +48,19 @@ func Test_RunSnmp(t *testing.T) {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
+	if err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println("Test_RunSnmp :", &np)
+
+	}
+}
+
+func Test_RunSnmpswalk(t *testing.T) {
+	var np []gosnmp.SnmpPDU
+	var err error
+	np, err = RunSnmpwalk(ip, community, oid, retry, timeout)
+
 	if err != nil {
 		t.Error(err)
 	} else {
@@ -93,12 +106,12 @@ func Test_ListIfStatsSnmpWalk(t *testing.T) {
 	ignoreIface := []string{"VLAN", "VL", "Vl"}
 	ignorePkt := false
 	ignoreOperStatus := false
-	ignoreMulticastPkt := true
-	ignoreBroadcastPkt := true
-	ignoreDiscards := true
-	ignoreErrors := true
-	ignoreUnknownProtos := true
-	ignoreOutQLen := true
+	ignoreMulticastPkt := false
+	ignoreBroadcastPkt := false
+	ignoreDiscards := false
+	ignoreErrors := false
+	ignoreUnknownProtos := false
+	ignoreOutQLen := false
 	if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt, ignoreDiscards, ignoreErrors, ignoreUnknownProtos, ignoreOutQLen); err != nil {
 		t.Error(err)
 	} else {
