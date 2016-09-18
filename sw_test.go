@@ -11,7 +11,7 @@ import (
 
 const (
 	ip           = "192.168.101.1"
-	community    = "public"
+	community    = "pubilc"
 	oid          = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
 	timeout      = 1000
 	method       = "walk"
@@ -87,7 +87,7 @@ func Test_SysVendor(t *testing.T) {
 }
 
 func Test_ListIfStats(t *testing.T) {
-	ignoreIface := []string{"VLAN", "VL", "Vl"}
+	ignoreIface := []string{"Vl"}
 	ignorePkt := false
 	ignoreOperStatus := false
 	ignoreMulticastPkt := false
