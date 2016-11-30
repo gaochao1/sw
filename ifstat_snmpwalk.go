@@ -21,16 +21,26 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 	chIfOutMap := make(chan map[string]string)
 
 	chIfNameMap := make(chan map[string]string)
+	chIfSpeedMap := make(chan map[string]string)
 
 	go WalkIfIn(ip, community, timeout, chIfInMap, retry)
 	go WalkIfOut(ip, community, timeout, chIfOutMap, retry)
 
 	go WalkIfName(ip, community, timeout, chIfNameMap, retry)
+	go WalkIfSpeed(ip, community, timeout, chIfSpeedMap, retry)
 
 	ifInMap := <-chIfInMap
 	ifOutMap := <-chIfOutMap
 
 	ifNameMap := <-chIfNameMap
+	ifSpeedMap := <-chIfSpeedMap
+
+	var ifStatusMap map[string]string
+	chIfStatusMap := make(chan map[string]string)
+	if ignoreOperStatus == false {
+		go WalkIfOperStatus(ip, community, timeout, chIfStatusMap, retry)
+		ifStatusMap = <-chIfStatusMap
+	}
 
 	chIfInPktMap := make(chan map[string]string)
 	chIfOutPktMap := make(chan map[string]string)
@@ -109,19 +119,6 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 		go WalkIfOutQLen(ip, community, timeout, chIfOutQLenMap, retry)
 		ifOutQLenMap = <-chIfOutQLenMap
 	}
-
-	var ifStatusMap map[string]string
-	chIfStatusMap := make(chan map[string]string)
-	if ignoreOperStatus == false {
-		go WalkIfOperStatus(ip, community, timeout, chIfStatusMap, retry)
-		ifStatusMap = <-chIfStatusMap
-	}
-
-	var ifSpeedMap map[string]string
-	chIfSpeedMap := make(chan map[string]string)
-
-	go WalkIfSpeed(ip, community, timeout, chIfSpeedMap, retry)
-	ifSpeedMap = <-chIfSpeedMap
 
 	if len(ifNameMap) > 0 && len(ifInMap) > 0 && len(ifOutMap) > 0 {
 

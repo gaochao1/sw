@@ -10,16 +10,17 @@ import (
 )
 
 const (
-	ip           = "192.168.101.1"
-	community    = "pubilc"
+	ip           = "10.10.31.101"
+	community    = "123456"
 	oid          = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
 	timeout      = 1000
 	method       = "walk"
 	retry        = 3
-	iprange      = "10.10.55.1/24"
+	iprange      = "10.10.50.1-10.10.50.25"
 	pingIp       = "10.10.10.1"
 	pingtimeout  = 1000
-	fastPingMode = false
+	fastPingMode = true
+	limitConn    = 20
 )
 
 func Test_CpuUtilization(t *testing.T) {
@@ -88,15 +89,15 @@ func Test_SysVendor(t *testing.T) {
 
 func Test_ListIfStats(t *testing.T) {
 	ignoreIface := []string{"Vl"}
-	ignorePkt := false
-	ignoreOperStatus := false
-	ignoreMulticastPkt := false
-	ignoreBroadcastPkt := false
-	ignoreDiscards := false
-	ignoreErrors := false
-	ignoreUnknownProtos := false
-	ignoreOutQLen := false
-	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt, ignoreDiscards, ignoreErrors, ignoreUnknownProtos, ignoreOutQLen); err != nil {
+	ignorePkt := true
+	ignoreOperStatus := true
+	ignoreMulticastPkt := true
+	ignoreBroadcastPkt := true
+	ignoreDiscards := true
+	ignoreErrors := true
+	ignoreUnknownProtos := true
+	ignoreOutQLen := true
+	if np, err := ListIfStats(ip, community, timeout, ignoreIface, retry, limitConn, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt, ignoreDiscards, ignoreErrors, ignoreUnknownProtos, ignoreOutQLen); err != nil {
 		t.Error(err)
 	} else {
 		fmt.Println("value:", np)
@@ -104,14 +105,14 @@ func Test_ListIfStats(t *testing.T) {
 }
 func Test_ListIfStatsSnmpWalk(t *testing.T) {
 	ignoreIface := []string{"VLAN", "VL", "Vl"}
-	ignorePkt := false
+	ignorePkt := true
 	ignoreOperStatus := false
 	ignoreMulticastPkt := false
 	ignoreBroadcastPkt := false
 	ignoreDiscards := false
 	ignoreErrors := false
 	ignoreUnknownProtos := false
-	ignoreOutQLen := false
+	ignoreOutQLen := true
 	if np, err := ListIfStatsSnmpWalk(ip, community, timeout, ignoreIface, retry, ignorePkt, ignoreOperStatus, ignoreBroadcastPkt, ignoreMulticastPkt, ignoreDiscards, ignoreErrors, ignoreUnknownProtos, ignoreOutQLen); err != nil {
 		t.Error(err)
 	} else {
@@ -153,6 +154,7 @@ func Test_ConnectionStat(t *testing.T) {
 func Test_ParseIp(t *testing.T) {
 	np := ParseIp(iprange)
 	t.Log("aliveip:", np)
+
 }
 
 func Test_PingRtt(t *testing.T) {
