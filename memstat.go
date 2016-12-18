@@ -62,6 +62,8 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 	case "Ruijie":
 		oid = "1.3.6.1.4.1.4881.1.1.10.2.35.1.1.1.3.0"
 		return getRuijiecpumem(ip, community, oid, timeout, retry)
+	case "Dell":
+		return GetDellMem(ip, community, timeout, retry)
 	default:
 		return 0, err
 	}
@@ -176,6 +178,21 @@ func getHuawei_Me60_Mem(ip, community string, timeout, retry int) (int, error) {
 	memFree, _, err := snmp_walk_sum(ip, community, memFreeOid, timeout, retry)
 	if memTotal != 0 && memFree != 0 {
 		memUtili := float64(memTotal-memFree) / float64(memTotal)
+		return int(memUtili * 100), nil
+	}
+	return 0, err
+}
+
+func GetDellMem(ip, community string, timeout, retry int) (int, error) {
+	method := "getnext"
+	memTotalOid := "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.2"
+	memTotal, err := RunSnmp(ip, community, memTotalOid, method, timeout)
+	memFreeOid := "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.1"
+	memFree, err := RunSnmp(ip, community, memFreeOid, method, timeout)
+	if &memTotal[0] != nil && &memFree[0] != nil {
+		memfree := memFree[0].Value.(int)
+		memtotal := memTotal[0].Value.(int)
+		memUtili := float64(memtotal-memfree) / float64(memtotal)
 		return int(memUtili * 100), nil
 	}
 	return 0, err
