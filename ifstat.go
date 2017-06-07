@@ -457,7 +457,7 @@ func RunSnmpRetry(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, r
 	snmpPDUs, err = RunSnmpwalk(ip, community, oid, retry, timeout)
 	if err != nil {
 		log.Println(ip, oid, err)
-		ch <- snmpPDUs
+		close(ch)
 		<-limitCh
 		return
 	}

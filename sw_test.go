@@ -20,7 +20,7 @@ const (
 	pingIp       = "10.10.10.1"
 	pingtimeout  = 1000
 	fastPingMode = true
-	limitConn    = 20
+	limitConn    = 1
 )
 
 func Test_CpuUtilization(t *testing.T) {
