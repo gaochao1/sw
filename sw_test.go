@@ -12,9 +12,9 @@ import (
 const (
 	ip           = "1.1.1.1"
 	community    = "123456"
-	oid          = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
+	oid          = "1.3.6.1.4.1.9.9.221.1.1.1.1.20"
 	timeout      = 1000
-	method       = "walk"
+	method       = "get"
 	retry        = 3
 	iprange      = "10.10.50.1-10.10.50.25"
 	pingIp       = "10.10.10.1"
