@@ -1,7 +1,9 @@
 package sw
 
 import (
+	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/gaochao1/gosnmp"
@@ -50,9 +52,13 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 		oid = "1.3.6.1.4.1.2636.3.1.13.1.8"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)
 	case "Ruijie":
-		oid = "1.3.6.1.4.1.4881.1.1.10.2.36.1.1.2.0"
+		oid = "1.3.6.1.4.1.4881.1.1.10.2.36.1.1.2"
 		return getRuijiecpumem(ip, community, oid, timeout, retry)
+	case "Dell":
+		oid = "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.11"
+		return getDellCpu(ip, community, oid, timeout, retry)
 	default:
+		err = errors.New(ip + "Switch Vendor is not defined")
 		return 0, err
 	}
 
@@ -90,23 +96,28 @@ func getH3CHWcpumem(ip, community, oid string, timeout, retry int) (value int, e
 			log.Println(ip+" Recovered in CPUtilization", r)
 		}
 	}()
-	method := "walk"
-
+	method := "getnext"
+	oidnext := oid
 	var snmpPDUs []gosnmp.SnmpPDU
 
-	for i := 0; i < retry; i++ {
-		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
-		if len(snmpPDUs) > 0 {
+	for {
+		for i := 0; i < retry; i++ {
+			snmpPDUs, err = RunSnmp(ip, community, oidnext, method, timeout)
+			if len(snmpPDUs) > 0 {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		oidnext = snmpPDUs[0].Name
+		if strings.Contains(oidnext, oid) {
+			if snmpPDUs[0].Value.(int) != 0 {
+				value = snmpPDUs[0].Value.(int)
+				break
+			}
+		} else {
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
-	}
 
-	for _, v := range snmpPDUs {
-		if v.Value.(int) != 0 {
-			value = v.Value.(int)
-			break
-		}
 	}
 
 	return value, err
@@ -119,7 +130,7 @@ func getRuijiecpumem(ip, community, oid string, timeout, retry int) (value int, 
 			log.Println(ip+" Recovered in CPUtilization", r)
 		}
 	}()
-	method := "get"
+	method := "getnext"
 
 	var snmpPDUs []gosnmp.SnmpPDU
 
@@ -143,6 +154,28 @@ func getHuawei_ME60cpu(ip, community, oid string, timeout, retry int) (value int
 	}
 
 	return 0, err
+}
+
+func getDellCpu(ip, community, oid string, timeout, retry int) (value int, err error) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in CPUtilization", r)
+		}
+	}()
+	method := "getnext"
+
+	var snmpPDUs []gosnmp.SnmpPDU
+
+	for i := 0; i < retry; i++ {
+		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
+		if len(snmpPDUs) > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	return snmpPDUs[0].Value.(int), err
 }
 
 func snmp_walk_sum(ip, community, oid string, timeout, retry int) (value_sum int, value_count int, err error) {

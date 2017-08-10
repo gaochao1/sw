@@ -94,6 +94,10 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 		return "Juniper", err
 	}
 
+	if strings.Contains(sysDescrLower, "dell networking") {
+		return "Dell", err
+	}
+
 	if strings.Contains(sysDescrLower, "linux") {
 		return "Linux", err
 	}
