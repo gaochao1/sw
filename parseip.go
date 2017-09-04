@@ -18,8 +18,32 @@ func ParseIp(ip string) []string {
 		} else {
 			availableIPs = GetAvailableIP(ip)
 		}
+	} else if strings.Contains(ip, "-") == true {
+		ipRange := strings.SplitN(ip, "-", 2)
+		availableIPs = GetAvailableIPRange(ipRange[0], ipRange[1])
 	} else {
 		availableIPs = append(availableIPs, ip)
+	}
+	return availableIPs
+}
+
+func GetAvailableIPRange(ipStart, ipEnd string) []string {
+	var availableIPs []string
+
+	firstIP := net.ParseIP(ipStart)
+	endIP := net.ParseIP(ipEnd)
+	if firstIP.To4() == nil || endIP.To4() == nil {
+		return availableIPs
+	}
+	firstIPNum := ipToInt(firstIP.To4())
+	EndIPNum := ipToInt(endIP.To4())
+	pos := int32(1)
+
+	newNum := firstIPNum
+
+	for newNum <= EndIPNum {
+		availableIPs = append(availableIPs, intToIP(newNum).String())
+		newNum = newNum + pos
 	}
 	return availableIPs
 }

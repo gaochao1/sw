@@ -28,6 +28,9 @@ const (
 	ifHCInMulticastPktsOid       = "1.3.6.1.2.1.31.1.1.1.8"
 	ifHCInMulticastPktsOidPrefix = ".1.3.6.1.2.1.31.1.1.1.8."
 	ifHCOutMulticastPktsOid      = "1.3.6.1.2.1.31.1.1.1.12"
+	// speed 配置
+	ifSpeedOid       = "1.3.6.1.2.1.31.1.1.1.15"
+	ifSpeedOidPrefix = ".1.3.6.1.2.1.31.1.1.1.15."
 
 	// Discards配置
 	ifInDiscardsOid       = "1.3.6.1.2.1.2.2.1.13"
@@ -60,6 +63,7 @@ type IfStats struct {
 	IfHCOutBroadcastPkts uint64
 	IfHCInMulticastPkts  uint64
 	IfHCOutMulticastPkts uint64
+	IfSpeed              int
 	IfInDiscards         int
 	IfOutDiscards        int
 	IfInErrors           int
@@ -74,8 +78,14 @@ func (this *IfStats) String() string {
 	return fmt.Sprintf("<IfName:%s, IfIndex:%d, IfHCInOctets:%d, IfHCOutOctets:%d>", this.IfName, this.IfIndex, this.IfHCInOctets, this.IfHCOutOctets)
 }
 
-func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool, ignoreDiscards bool, ignoreErrors bool, ignoreUnknownProtos bool, ignoreOutQLen bool) ([]IfStats, error) {
+func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry int, limitConn int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool, ignoreDiscards bool, ignoreErrors bool, ignoreUnknownProtos bool, ignoreOutQLen bool) ([]IfStats, error) {
 	var ifStatsList []IfStats
+	var limitCh chan bool
+	if limitConn > 0 {
+		limitCh = make(chan bool, limitConn)
+	} else {
+		limitCh = make(chan bool, 1)
+	}
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -87,21 +97,29 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	chIfOutList := make(chan []gosnmp.SnmpPDU)
 
 	chIfNameList := make(chan []gosnmp.SnmpPDU)
+	chIfSpeedList := make(chan []gosnmp.SnmpPDU)
+
+	limitCh <- true
+	go ListIfHCInOctets(ip, community, timeout, chIfInList, retry, limitCh)
+	time.Sleep(5 * time.Millisecond)
+	limitCh <- true
+	go ListIfHCOutOctets(ip, community, timeout, chIfOutList, retry, limitCh)
+	time.Sleep(5 * time.Millisecond)
+	limitCh <- true
+	go ListIfName(ip, community, timeout, chIfNameList, retry, limitCh)
+	time.Sleep(5 * time.Millisecond)
+	limitCh <- true
+	go ListIfSpeed(ip, community, timeout, chIfSpeedList, retry, limitCh)
+	time.Sleep(5 * time.Millisecond)
+
+	// OperStatus
+	var ifStatusList []gosnmp.SnmpPDU
 	chIfStatusList := make(chan []gosnmp.SnmpPDU)
-
-	go ListIfHCInOctets(ip, community, timeout, chIfInList, retry)
-	time.Sleep(100 * time.Millisecond)
-
-	go ListIfHCOutOctets(ip, community, timeout, chIfOutList, retry)
-	time.Sleep(100 * time.Millisecond)
-
-	go ListIfName(ip, community, timeout, chIfNameList, retry)
-	time.Sleep(100 * time.Millisecond)
-
-	ifInList := <-chIfInList
-	ifOutList := <-chIfOutList
-
-	ifNameList := <-chIfNameList
+	if ignoreOperStatus == false {
+		limitCh <- true
+		go ListIfOperStatus(ip, community, timeout, chIfStatusList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+	}
 
 	chIfInPktList := make(chan []gosnmp.SnmpPDU)
 	chIfOutPktList := make(chan []gosnmp.SnmpPDU)
@@ -109,12 +127,13 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	var ifInPktList, ifOutPktList []gosnmp.SnmpPDU
 
 	if ignorePkt == false {
-		go ListIfHCInUcastPkts(ip, community, timeout, chIfInPktList, retry)
-		time.Sleep(100 * time.Millisecond)
-		go ListIfHCOutUcastPkts(ip, community, timeout, chIfOutPktList, retry)
-		time.Sleep(100 * time.Millisecond)
-		ifInPktList = <-chIfInPktList
-		ifOutPktList = <-chIfOutPktList
+		limitCh <- true
+		go ListIfHCInUcastPkts(ip, community, timeout, chIfInPktList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+		limitCh <- true
+		go ListIfHCOutUcastPkts(ip, community, timeout, chIfOutPktList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+
 	}
 
 	chIfInBroadcastPktList := make(chan []gosnmp.SnmpPDU)
@@ -123,12 +142,13 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	var ifInBroadcastPktList, ifOutBroadcastPktList []gosnmp.SnmpPDU
 
 	if ignoreBroadcastPkt == false {
-		go ListIfHCInBroadcastPkts(ip, community, timeout, chIfInBroadcastPktList, retry)
-		time.Sleep(100 * time.Millisecond)
-		go ListIfHCOutBroadcastPkts(ip, community, timeout, chIfOutBroadcastPktList, retry)
-		time.Sleep(100 * time.Millisecond)
-		ifInBroadcastPktList = <-chIfInBroadcastPktList
-		ifOutBroadcastPktList = <-chIfOutBroadcastPktList
+		limitCh <- true
+		go ListIfHCInBroadcastPkts(ip, community, timeout, chIfInBroadcastPktList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+		limitCh <- true
+		go ListIfHCOutBroadcastPkts(ip, community, timeout, chIfOutBroadcastPktList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+
 	}
 
 	chIfInMulticastPktList := make(chan []gosnmp.SnmpPDU)
@@ -137,12 +157,13 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	var ifInMulticastPktList, ifOutMulticastPktList []gosnmp.SnmpPDU
 
 	if ignoreMulticastPkt == false {
-		go ListIfHCInMulticastPkts(ip, community, timeout, chIfInMulticastPktList, retry)
-		time.Sleep(100 * time.Millisecond)
-		go ListIfHCOutMulticastPkts(ip, community, timeout, chIfOutMulticastPktList, retry)
-		time.Sleep(100 * time.Millisecond)
-		ifInMulticastPktList = <-chIfInMulticastPktList
-		ifOutMulticastPktList = <-chIfOutMulticastPktList
+		limitCh <- true
+		go ListIfHCInMulticastPkts(ip, community, timeout, chIfInMulticastPktList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+		limitCh <- true
+		go ListIfHCOutMulticastPkts(ip, community, timeout, chIfOutMulticastPktList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+
 	}
 
 	//Discards
@@ -152,12 +173,13 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	var ifInDiscardsList, ifOutDiscardsList []gosnmp.SnmpPDU
 
 	if ignoreDiscards == false {
-		go ListIfInDiscards(ip, community, timeout, chIfInDiscardsList, retry)
-		time.Sleep(100 * time.Millisecond)
-		go ListIfOutDiscards(ip, community, timeout, chIfOutDiscardsList, retry)
-		time.Sleep(100 * time.Millisecond)
-		ifInDiscardsList = <-chIfInDiscardsList
-		ifOutDiscardsList = <-chIfOutDiscardsList
+		limitCh <- true
+		go ListIfInDiscards(ip, community, timeout, chIfInDiscardsList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+		limitCh <- true
+		go ListIfOutDiscards(ip, community, timeout, chIfOutDiscardsList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+
 	}
 
 	//Errors
@@ -167,12 +189,13 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	var ifInErrorsList, ifOutErrorsList []gosnmp.SnmpPDU
 
 	if ignoreErrors == false {
-		go ListIfInErrors(ip, community, timeout, chIfInErrorsList, retry)
-		time.Sleep(100 * time.Millisecond)
-		go ListIfOutErrors(ip, community, timeout, chIfOutErrorsList, retry)
-		time.Sleep(100 * time.Millisecond)
-		ifInErrorsList = <-chIfInErrorsList
-		ifOutErrorsList = <-chIfOutErrorsList
+		limitCh <- true
+		go ListIfInErrors(ip, community, timeout, chIfInErrorsList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+		limitCh <- true
+		go ListIfOutErrors(ip, community, timeout, chIfOutErrorsList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+
 	}
 
 	//UnknownProtos
@@ -181,9 +204,10 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	var ifInUnknownProtosList []gosnmp.SnmpPDU
 
 	if ignoreUnknownProtos == false {
-		go ListIfInUnknownProtos(ip, community, timeout, chIfInUnknownProtosList, retry)
-		time.Sleep(100 * time.Millisecond)
-		ifInUnknownProtosList = <-chIfInUnknownProtosList
+		limitCh <- true
+		go ListIfInUnknownProtos(ip, community, timeout, chIfInUnknownProtosList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+
 	}
 	//QLen
 	chIfOutQLenList := make(chan []gosnmp.SnmpPDU)
@@ -191,15 +215,43 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	var ifOutQLenList []gosnmp.SnmpPDU
 
 	if ignoreOutQLen == false {
-		go ListIfOutQLen(ip, community, timeout, chIfOutQLenList, retry)
-		time.Sleep(100 * time.Millisecond)
-		ifOutQLenList = <-chIfOutQLenList
+		limitCh <- true
+		go ListIfOutQLen(ip, community, timeout, chIfOutQLenList, retry, limitCh)
+		time.Sleep(5 * time.Millisecond)
+
 	}
-	// OperStatus
-	var ifStatusList []gosnmp.SnmpPDU
+	ifInList := <-chIfInList
+	ifOutList := <-chIfOutList
+	ifNameList := <-chIfNameList
+	ifSpeedList := <-chIfSpeedList
 	if ignoreOperStatus == false {
-		go ListIfOperStatus(ip, community, timeout, chIfStatusList, retry)
 		ifStatusList = <-chIfStatusList
+	}
+	if ignorePkt == false {
+		ifInPktList = <-chIfInPktList
+		ifOutPktList = <-chIfOutPktList
+	}
+	if ignoreBroadcastPkt == false {
+		ifInBroadcastPktList = <-chIfInBroadcastPktList
+		ifOutBroadcastPktList = <-chIfOutBroadcastPktList
+	}
+	if ignoreMulticastPkt == false {
+		ifInMulticastPktList = <-chIfInMulticastPktList
+		ifOutMulticastPktList = <-chIfOutMulticastPktList
+	}
+	if ignoreDiscards == false {
+		ifInDiscardsList = <-chIfInDiscardsList
+		ifOutDiscardsList = <-chIfOutDiscardsList
+	}
+	if ignoreErrors == false {
+		ifInErrorsList = <-chIfInErrorsList
+		ifOutErrorsList = <-chIfOutErrorsList
+	}
+	if ignoreUnknownProtos == false {
+		ifInUnknownProtosList = <-chIfInUnknownProtosList
+	}
+	if ignoreOutQLen == false {
+		ifOutQLenList = <-chIfOutQLenList
 	}
 
 	if len(ifNameList) > 0 && len(ifInList) > 0 && len(ifOutList) > 0 {
@@ -312,6 +364,14 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 						}
 					}
 				}
+
+				for ti, ifSpeedPDU := range ifSpeedList {
+					if strings.Replace(ifSpeedPDU.Name, ifSpeedOidPrefix, "", 1) == ifIndexStr {
+						ifStats.IfSpeed = 1000 * 1000 * ifSpeedList[ti].Value.(int)
+						break
+					}
+				}
+
 				ifStats.TS = now
 				ifStats.IfName = ifName
 				ifStatsList = append(ifStatsList, ifStats)
@@ -322,85 +382,87 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 	return ifStatsList, nil
 }
 
-func ListIfOperStatus(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifOperStatusOid)
+func ListIfOperStatus(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifOperStatusOid)
 }
 
-func ListIfName(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifNameOid)
+func ListIfName(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifNameOid)
 }
 
-func ListIfHCInOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCInOid)
+func ListIfHCInOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifHCInOid)
 }
 
-func ListIfHCOutOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCOutOid)
+func ListIfHCOutOctets(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifHCOutOid)
 }
 
-func ListIfHCInUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCInPktsOid)
+func ListIfHCInUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifHCInPktsOid)
 }
 
-func ListIfHCInBroadcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCInBroadcastPktsOid)
+func ListIfHCInBroadcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifHCInBroadcastPktsOid)
 }
 
-func ListIfHCOutBroadcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCOutBroadcastPktsOid)
+func ListIfHCOutBroadcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifHCOutBroadcastPktsOid)
 }
 
-func ListIfHCInMulticastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCInMulticastPktsOid)
+func ListIfHCInMulticastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifHCInMulticastPktsOid)
 }
 
-func ListIfHCOutMulticastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCOutMulticastPktsOid)
+func ListIfHCOutMulticastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifHCOutMulticastPktsOid)
 }
 
-func ListIfInDiscards(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifInDiscardsOid)
+func ListIfInDiscards(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifInDiscardsOid)
 }
 
-func ListIfOutDiscards(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifOutDiscardsOid)
+func ListIfOutDiscards(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifOutDiscardsOid)
 }
 
-func ListIfInErrors(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifInErrorsOid)
+func ListIfInErrors(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifInErrorsOid)
 }
 
-func ListIfOutErrors(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifOutErrorsOid)
+func ListIfOutErrors(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifOutErrorsOid)
 }
 
-func ListIfHCOutUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifHCOutPktsOid)
+func ListIfHCOutUcastPkts(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifHCOutPktsOid)
 }
 
-func ListIfInUnknownProtos(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifInUnknownProtosOid)
+func ListIfInUnknownProtos(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifInUnknownProtosOid)
 }
 
-func ListIfOutQLen(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int) {
-	RunSnmpRetry(ip, community, timeout, ch, retry, ifOutQLenOid)
+func ListIfOutQLen(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifOutQLenOid)
 }
 
-func RunSnmpRetry(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, oid string) {
-	method := "walk"
+func ListIfSpeed(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool) {
+	RunSnmpRetry(ip, community, timeout, ch, retry, limitCh, ifSpeedOid)
+}
+
+func RunSnmpRetry(ip, community string, timeout int, ch chan []gosnmp.SnmpPDU, retry int, limitCh chan bool, oid string) {
+
 	var snmpPDUs []gosnmp.SnmpPDU
 	var err error
-	for i := 0; i < retry; i++ {
-		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
-		if len(snmpPDUs) > 0 {
-			ch <- snmpPDUs
-			return
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
+	snmpPDUs, err = RunSnmpwalk(ip, community, oid, retry, timeout)
 	if err != nil {
 		log.Println(ip, oid, err)
+		close(ch)
+		<-limitCh
+		return
 	}
+	<-limitCh
 	ch <- snmpPDUs
+
 	return
 }

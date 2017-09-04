@@ -5,8 +5,8 @@ import (
 	"regexp"
 )
 
-func SysModel(ip, community string, timeout int) (string, error) {
-	vendor, err := SysVendor(ip, community, timeout)
+func SysModel(ip, community string, retry int, timeout int) (string, error) {
+	vendor, err := SysVendor(ip, community, retry, timeout)
 	method := "get"
 	var oid string
 
@@ -23,7 +23,7 @@ func SysModel(ip, community string, timeout int) (string, error) {
 		oid = "1.3.6.1.2.1.47.1.1.1.1.13.1001"
 	case "Huawei", "H3C", "H3C_V5", "H3C_V7":
 		re := regexp.MustCompile(`\w+-\w+-\w+\S+`)
-		sysDescr, err := SysDescr(ip, community, timeout)
+		sysDescr, err := SysDescr(ip, community, retry, timeout)
 		if err != nil {
 			return "", err
 		} else {

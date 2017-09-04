@@ -10,7 +10,7 @@ import (
 )
 
 func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool, ignoreDiscards bool, ignoreErrors bool, ignoreUnknownProtos bool, ignoreOutQLen bool) ([]IfStats, error) {
-	//func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string, retry int, ignorePkt bool, ignoreOperStatus bool, ignoreBroadcastPkt bool, ignoreMulticastPkt bool) ([]IfStats, error) {
+
 	var ifStatsList []IfStats
 	defer func() {
 		if r := recover(); r != nil {
@@ -21,17 +21,26 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 	chIfOutMap := make(chan map[string]string)
 
 	chIfNameMap := make(chan map[string]string)
-	chIfStatusMap := make(chan map[string]string)
+	chIfSpeedMap := make(chan map[string]string)
 
 	go WalkIfIn(ip, community, timeout, chIfInMap, retry)
 	go WalkIfOut(ip, community, timeout, chIfOutMap, retry)
 
 	go WalkIfName(ip, community, timeout, chIfNameMap, retry)
+	go WalkIfSpeed(ip, community, timeout, chIfSpeedMap, retry)
 
 	ifInMap := <-chIfInMap
 	ifOutMap := <-chIfOutMap
 
 	ifNameMap := <-chIfNameMap
+	ifSpeedMap := <-chIfSpeedMap
+
+	var ifStatusMap map[string]string
+	chIfStatusMap := make(chan map[string]string)
+	if ignoreOperStatus == false {
+		go WalkIfOperStatus(ip, community, timeout, chIfStatusMap, retry)
+		ifStatusMap = <-chIfStatusMap
+	}
 
 	chIfInPktMap := make(chan map[string]string)
 	chIfOutPktMap := make(chan map[string]string)
@@ -111,12 +120,6 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 		ifOutQLenMap = <-chIfOutQLenMap
 	}
 
-	var ifStatusMap map[string]string
-	if ignoreOperStatus == false {
-		go WalkIfOperStatus(ip, community, timeout, chIfStatusMap, retry)
-		ifStatusMap = <-chIfStatusMap
-	}
-
 	if len(ifNameMap) > 0 && len(ifInMap) > 0 && len(ifOutMap) > 0 {
 
 		now := time.Now().Unix()
@@ -166,6 +169,10 @@ func ListIfStatsSnmpWalk(ip, community string, timeout int, ignoreIface []string
 				if ignoreOutQLen == false {
 					ifStats.IfOutQLen, _ = strconv.Atoi(ifOutQLenMap[ifIndex])
 				}
+
+				ifStats.IfSpeed, _ = strconv.Atoi(ifSpeedMap[ifIndex])
+				ifStats.IfSpeed = 1000 * 1000 * ifStats.IfSpeed
+
 				if ignoreOperStatus == false {
 					ifstatus_string = ifStatusMap[ifIndex]
 					ifstatus_string = strings.TrimSpace(ifstatus_string)
@@ -247,6 +254,10 @@ func WalkIfInUnknownProtos(ip, community string, timeout int, ch chan map[string
 
 func WalkIfOutQLen(ip, community string, timeout int, ch chan map[string]string, retry int) {
 	WalkIf(ip, ifOutQLenOid, community, timeout, retry, ch)
+}
+
+func WalkIfSpeed(ip, community string, timeout int, ch chan map[string]string, retry int) {
+	WalkIf(ip, ifSpeedOid, community, timeout, retry, ch)
 }
 
 func WalkIf(ip, oid, community string, timeout, retry int, ch chan map[string]string) {

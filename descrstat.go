@@ -4,18 +4,29 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/gaochao1/gosnmp"
 )
 
-func SysDescr(ip, community string, timeout int) (string, error) {
-	oid := "1.3.6.1.2.1.1.1.0"
-	method := "get"
-
-	snmpPDUs, err := RunSnmp(ip, community, oid, method, timeout)
+func SysDescr(ip, community string, retry int, timeout int) (string, error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println(ip+" Recovered in sysDescr", r)
 		}
 	}()
+	oid := "1.3.6.1.2.1.1.1.0"
+	method := "get"
+	var snmpPDUs []gosnmp.SnmpPDU
+	var err error
+	for i := 0; i < retry; i++ {
+		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
+		if len(snmpPDUs) > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
 	if err == nil {
 		for _, pdu := range snmpPDUs {
 			return pdu.Value.(string), err
@@ -25,8 +36,8 @@ func SysDescr(ip, community string, timeout int) (string, error) {
 	return "", err
 }
 
-func SysVendor(ip, community string, timeout int) (string, error) {
-	sysDescr, err := SysDescr(ip, community, timeout)
+func SysVendor(ip, community string, retry int, timeout int) (string, error) {
+	sysDescr, err := SysDescr(ip, community, retry, timeout)
 	sysDescrLower := strings.ToLower(sysDescr)
 
 	if strings.Contains(sysDescrLower, "cisco nx-os") {
@@ -92,6 +103,10 @@ func SysVendor(ip, community string, timeout int) (string, error) {
 
 	if strings.Contains(sysDescrLower, "juniper networks") {
 		return "Juniper", err
+	}
+
+	if strings.Contains(sysDescrLower, "dell networking") {
+		return "Dell", err
 	}
 
 	if strings.Contains(sysDescrLower, "linux") {
