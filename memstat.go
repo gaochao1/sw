@@ -10,15 +10,17 @@ import (
 )
 
 func MemUtilization(ip, community string, timeout, retry int) (int, error) {
-	vendor, err := SysVendor(ip, community, retry, timeout)
-	method := "get"
-	var oid string
-
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println(ip+" Recovered in MemUtilization", r)
 		}
 	}()
+	vendor, err := SysVendor(ip, community, retry, timeout)
+	if err != nil {
+		return 0, err
+	}
+	method := "get"
+	var oid string
 
 	switch vendor {
 	case "Cisco_NX":
