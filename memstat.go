@@ -54,7 +54,7 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 	case "Huawei", "Huawei_V5.70", "Huawei_V5.130":
 		oid = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.7"
 		return getH3CHWcpumem(ip, community, oid, timeout, retry)
-	case "Huawei_V3.10":
+	case "Huawei_V3.10", "H3c_V3.10":
 		return getOldHuawei_Mem(ip, community, timeout, retry)
 	case "Huawei_ME60":
 		return getHuawei_Me60_Mem(ip, community, timeout, retry)

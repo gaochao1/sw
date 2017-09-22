@@ -77,6 +77,9 @@ func SysVendor(ip, community string, retry int, timeout int) (string, error) {
 		if strings.Contains(sysDescr, "Version S9500") {
 			return "H3C_S9500", err
 		}
+		if strings.Contains(sysDescr, "Version 3.10") {
+			return "H3c_V3.10", err
+		}
 
 		return "H3C", err
 	}

@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	ip           = "192.168.2.2"
-	community    = "public"
-	oid          = "1.3.6.1.2.1.1.3.0"
+	ip           = "10.200.43.101"
+	community    = "123456"
+	oid          = "1.3.6.1.4.1.2021.10.1.3.1"
 	timeout      = 1000
 	method       = "get"
 	retry        = 3
@@ -53,7 +53,7 @@ func Test_RunSnmp(t *testing.T) {
 		t.Error(err)
 	} else {
 		fmt.Println("Test_RunSnmp :", &np)
-		fmt.Println(np[0].Value.(int))
+		fmt.Println(np[0].Value.(string))
 
 	}
 }
