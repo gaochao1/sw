@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alouca/gosnmp"
+	"github.com/GitHamburg/gosnmp"
 )
 
 func CpuUtilization(ip, community string, timeout, retry int) (int, error) {

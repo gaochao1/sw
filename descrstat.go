@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alouca/gosnmp"
+	"github.com/GitHamburg/gosnmp"
 )
 
 func SysDescr(ip, community string, retry int, timeout int) (string, error) {

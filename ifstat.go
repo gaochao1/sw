@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alouca/gosnmp"
+	"github.com/GitHamburg/gosnmp"
 )
 
 const (

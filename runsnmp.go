@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alouca/gosnmp"
+	"github.com/GitHamburg/gosnmp"
 )
 
 func RunSnmp(ip, community, oid, method string, timeout int) (snmpPDUs []gosnmp.SnmpPDU, err error) {
