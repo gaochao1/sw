@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gaochao1/gosnmp"
+	"github.com/alouca/gosnmp"
 )
 
 func SysModel(ip, community string, retry int, timeout int) (string, error) {

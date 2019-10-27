@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gaochao1/gosnmp"
+	"github.com/alouca/gosnmp"
 )
 
 const (
