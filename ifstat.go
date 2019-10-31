@@ -87,11 +87,11 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 		limitCh = make(chan bool, 1)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println(ip+" Recovered in ListIfStats", r)
-		}
-	}()
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		log.Println(ip+" Recovered in ListIfStats", r)
+	//	}
+	//}()
 
 	chIfInList := make(chan []gosnmp.SnmpPDU)
 	chIfOutList := make(chan []gosnmp.SnmpPDU)
