@@ -63,6 +63,9 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 	case "Linux":
 		oid = "1.3.6.1.4.1.2021.11.11.0"
 		return getLinuxCpu(ip, community, oid, timeout, retry)
+	case "Foundry":
+		oid = "1.3.6.1.4.1.1991.1.1.2.1.52.0"
+		return getFoundryCpu(ip, community, oid, timeout, retry)
 	default:
 		err = errors.New(ip + " Switch Vendor is not defined")
 		return 0, err
@@ -163,6 +166,28 @@ func getHuawei_ME60cpu(ip, community, oid string, timeout, retry int) (value int
 }
 
 func getDellCpu(ip, community, oid string, timeout, retry int) (value int, err error) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(ip+" Recovered in CPUtilization", r)
+		}
+	}()
+	method := "getnext"
+
+	var snmpPDUs []gosnmp.SnmpPDU
+
+	for i := 0; i < retry; i++ {
+		snmpPDUs, err = RunSnmp(ip, community, oid, method, timeout)
+		if len(snmpPDUs) > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	return snmpPDUs[0].Value.(int), err
+}
+
+func getFoundryCpu(ip, community, oid string, timeout, retry int) (value int, err error) {
 
 	defer func() {
 		if r := recover(); r != nil {

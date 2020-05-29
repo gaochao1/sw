@@ -74,6 +74,8 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 		return GetDellMem(ip, community, timeout, retry)
 	case "Linux":
 		return GetLinuxMem(ip, community, timeout, retry)
+	case "Foundry":
+		return GetFoundryMem(ip, community, timeout, retry)
 	default:
 		err = errors.New(ip + " Switch Vendor is not defined")
 		return 0, err
@@ -227,6 +229,21 @@ func GetLinuxMem(ip, community string, timeout, retry int) (int, error) {
 	memTotalOid := "1.3.6.1.4.1.2021.4.5.0"
 	memTotal, err := RunSnmp(ip, community, memTotalOid, method, timeout)
 	memFreeOid := "1.3.6.1.4.1.2021.4.11.0"
+	memFree, err := RunSnmp(ip, community, memFreeOid, method, timeout)
+	if &memTotal[0] != nil && &memFree[0] != nil {
+		memfree := memFree[0].Value.(int)
+		memtotal := memTotal[0].Value.(int)
+		memUtili := float64(memtotal-memfree) / float64(memtotal)
+		return int(memUtili * 100), nil
+	}
+	return 0, err
+}
+
+func GetFoundryMem(ip, community string, timeout, retry int) (int, error) {
+	method := "getnext"
+	memTotalOid := "1.3.6.1.4.1.1991.1.1.2.1.54.0"
+	memTotal, err := RunSnmp(ip, community, memTotalOid, method, timeout)
+	memFreeOid := "1.3.6.1.4.1.1991.1.1.2.1.55.0"
 	memFree, err := RunSnmp(ip, community, memFreeOid, method, timeout)
 	if &memTotal[0] != nil && &memFree[0] != nil {
 		memfree := memFree[0].Value.(int)
