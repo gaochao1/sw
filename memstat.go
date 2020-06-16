@@ -74,6 +74,8 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 		return GetDellMem(ip, community, timeout, retry)
 	case "Linux":
 		return GetLinuxMem(ip, community, timeout, retry)
+	case "A10":
+		return GetA10Mem(ip, community, timeout, retry)
 	default:
 		err = errors.New(ip + " Switch Vendor is not defined")
 		return 0, err
@@ -232,6 +234,21 @@ func GetLinuxMem(ip, community string, timeout, retry int) (int, error) {
 		memfree := memFree[0].Value.(int)
 		memtotal := memTotal[0].Value.(int)
 		memUtili := float64(memtotal-memfree) / float64(memtotal)
+		return int(memUtili * 100), nil
+	}
+	return 0, err
+}
+
+func GetA10Mem(ip, community string, timeout, retry int) (int, error) {
+	method := "getnext"
+	memTotalOid := ".1.3.6.1.4.1.22610.2.4.1.2.1"
+	memTotal, err := RunSnmp(ip, community, memTotalOid, method, timeout)
+	memUsedOid := "1.3.6.1.4.1.22610.2.4.1.2.2"
+	memUsed, err := RunSnmp(ip, community, memUsedOid, method, timeout)
+	if &memTotal[0] != nil && &memUsed[0] != nil {
+		memused := memUsed[0].Value.(int)
+		memtotal := memTotal[0].Value.(int)
+		memUtili := float64(memused) / float64(memtotal)
 		return int(memUtili * 100), nil
 	}
 	return 0, err

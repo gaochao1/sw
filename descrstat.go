@@ -116,6 +116,10 @@ func SysVendor(ip, community string, retry int, timeout int) (string, error) {
 		return "Linux", err
 	}
 
+	if strings.Contains(sysDescrLower, "thunder series") {
+		return "A10", err
+	}
+
 	return "", err
 }
 
