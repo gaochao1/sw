@@ -76,6 +76,10 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 		return GetLinuxMem(ip, community, timeout, retry)
 	case "A10":
 		return GetA10Mem(ip, community, timeout, retry)
+	case "Aruba":
+		return GetArubaMem(ip, community, timeout, retry)
+	case "Cisco_Controller":
+		return GetCiscoControllerMem(ip, community, timeout, retry)
 	default:
 		err = errors.New(ip + " Switch Vendor is not defined")
 		return 0, err
@@ -241,7 +245,7 @@ func GetLinuxMem(ip, community string, timeout, retry int) (int, error) {
 
 func GetA10Mem(ip, community string, timeout, retry int) (int, error) {
 	method := "getnext"
-	memTotalOid := ".1.3.6.1.4.1.22610.2.4.1.2.1"
+	memTotalOid := "1.3.6.1.4.1.22610.2.4.1.2.1"
 	memTotal, err := RunSnmp(ip, community, memTotalOid, method, timeout)
 	memUsedOid := "1.3.6.1.4.1.22610.2.4.1.2.2"
 	memUsed, err := RunSnmp(ip, community, memUsedOid, method, timeout)
@@ -249,6 +253,38 @@ func GetA10Mem(ip, community string, timeout, retry int) (int, error) {
 		memused := memUsed[0].Value.(int)
 		memtotal := memTotal[0].Value.(int)
 		memUtili := float64(memused) / float64(memtotal)
+		return int(memUtili * 100), nil
+	}
+	return 0, err
+}
+
+func GetArubaMem(ip, community string, timeout, retry int) (int, error) {
+	method := "getnext"
+	memFreeOid := "1.3.6.1.4.1.14823.2.2.1.2.1.15.1.4"
+	memFree, err := RunSnmp(ip, community, memFreeOid, method, timeout)
+	memUsedOid := "1.3.6.1.4.1.14823.2.2.1.2.1.15.1.3"
+	memUsed, err := RunSnmp(ip, community, memUsedOid, method, timeout)
+	if &memFree[0] != nil && &memUsed[0] != nil {
+		memused := memUsed[0].Value.(int)
+		memfree := memFree[0].Value.(int)
+		if memused+memfree != 0 {
+			memUtili := float64(memused) / float64(memused+memfree)
+			return int(memUtili * 100), nil
+		}
+	}
+	return 0, err
+}
+
+func GetCiscoControllerMem(ip, community string, timeout, retry int) (int, error) {
+	method := "getnext"
+	memTotalOid := "1.3.6.1.4.1.14179.1.1.5.2"
+	memTotal, err := RunSnmp(ip, community, memTotalOid, method, timeout)
+	memFreeOid := "1.3.6.1.4.1.14179.1.1.5.3"
+	memFree, err := RunSnmp(ip, community, memFreeOid, method, timeout)
+	if &memTotal[0] != nil && &memFree[0] != nil {
+		memfree := memFree[0].Value.(int)
+		memtotal := memTotal[0].Value.(int)
+		memUtili := float64(memtotal-memfree) / float64(memtotal)
 		return int(memUtili * 100), nil
 	}
 	return 0, err

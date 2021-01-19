@@ -1,0 +1,13 @@
+github.com/alouca/gologger v0.0.0-20120904114645-7d4b7291de9c h1:k/7/05/5kPRX7HaKyVYlsGVX6XkFTyYLqkqHzceUVlU=
+github.com/alouca/gologger v0.0.0-20120904114645-7d4b7291de9c/go.mod h1:SI1d/2/wpSTDjHgdS9ZLy6hqvsdhzVYAc8RLztweMpA=
+github.com/freedomkk-qfeng/go-fastping v0.0.0-20160109021039-d7bb493dee3e h1:g8x+P3+xjxt7c53bucQW0ymvj+whjKfCLZH+99UMLS0=
+github.com/freedomkk-qfeng/go-fastping v0.0.0-20160109021039-d7bb493dee3e/go.mod h1:UcrAEbxjAhuq5beDj0conKRHGUhBPLkFt8aUmN/jrHY=
+github.com/gaochao1/gosnmp v0.0.0-20150630013918-783a67a067fd h1:GO2tQE1AIt+P5dwEAVhjH9SlyUcyiN6PJZv8x33QsgU=
+github.com/gaochao1/gosnmp v0.0.0-20150630013918-783a67a067fd/go.mod h1:2hQbnwhmIsamIldRzbGxojAjH14ikUBgB4kjk/f6/eI=
+golang.org/x/net v0.0.0-20201224014010-6772e930b67b h1:iFwSg7t5GZmB/Q5TjiEAsdoLDrdJRC1RiF2WhuV29Qw=
+golang.org/x/net v0.0.0-20201224014010-6772e930b67b/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
+golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 h1:nxC68pudNYkKU6jWhgrqdreuFiOQWj1Fs7T3VrH4Pjw=
+golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
+golang.org/x/text v0.3.3/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
+golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=

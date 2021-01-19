@@ -58,6 +58,10 @@ func SysVendor(ip, community string, retry int, timeout int) (string, error) {
 		}
 	}
 
+	if strings.Contains(sysDescrLower, "cisco controller") {
+		return "Cisco_Controller", err
+	}
+
 	if strings.Contains(sysDescrLower, "cisco adaptive security appliance") {
 		version_number, err := strconv.ParseFloat(getVersionNumber(sysDescr), 32)
 		if err == nil && version_number < 9.2 {
@@ -118,6 +122,10 @@ func SysVendor(ip, community string, retry int, timeout int) (string, error) {
 
 	if strings.Contains(sysDescrLower, "thunder series") {
 		return "A10", err
+	}
+
+	if strings.Contains(sysDescrLower, "arubaos") {
+		return "Aruba", err
 	}
 
 	return "", err
