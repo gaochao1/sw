@@ -280,35 +280,43 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 
 				for ti, ifHCInOctetsPDU := range ifInList {
 					if strings.Replace(ifHCInOctetsPDU.Name, ifHCInOidPrefix, "", 1) == ifIndexStr {
-						ifStats.IfHCInOctets = ifInList[ti].Value.(uint64)
-						ifStats.IfHCOutOctets = ifOutList[ti].Value.(uint64)
-						break
+						if ifInList[ti].Value != nil && ifOutList[ti].Value != nil {
+							ifStats.IfHCInOctets = ifInList[ti].Value.(uint64)
+							ifStats.IfHCOutOctets = ifOutList[ti].Value.(uint64)
+							break
+						}
 					}
 				}
 				if ignorePkt == false {
 					for ti, ifHCInPktsPDU := range ifInPktList {
 						if strings.Replace(ifHCInPktsPDU.Name, ifHCInPktsOidPrefix, "", 1) == ifIndexStr {
-							ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(uint64)
-							ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(uint64)
-							break
+							if ifInPktList[ti].Value != nil && ifOutPktList[ti].Value != nil {
+								ifStats.IfHCInUcastPkts = ifInPktList[ti].Value.(uint64)
+								ifStats.IfHCOutUcastPkts = ifOutPktList[ti].Value.(uint64)
+								break
+							}
 						}
 					}
 				}
 				if ignoreBroadcastPkt == false {
 					for ti, ifHCInBroadcastPktPDU := range ifInBroadcastPktList {
 						if strings.Replace(ifHCInBroadcastPktPDU.Name, ifHCInBroadcastPktsOidPrefix, "", 1) == ifIndexStr {
-							ifStats.IfHCInBroadcastPkts = ifInBroadcastPktList[ti].Value.(uint64)
-							ifStats.IfHCOutBroadcastPkts = ifOutBroadcastPktList[ti].Value.(uint64)
-							break
+							if ifInBroadcastPktList[ti].Value != nil && ifOutBroadcastPktList[ti].Value != nil {
+								ifStats.IfHCInBroadcastPkts = ifInBroadcastPktList[ti].Value.(uint64)
+								ifStats.IfHCOutBroadcastPkts = ifOutBroadcastPktList[ti].Value.(uint64)
+								break
+							}
 						}
 					}
 				}
 				if ignoreMulticastPkt == false {
 					for ti, ifHCInMulticastPktPDU := range ifInMulticastPktList {
 						if strings.Replace(ifHCInMulticastPktPDU.Name, ifHCInMulticastPktsOidPrefix, "", 1) == ifIndexStr {
-							ifStats.IfHCInMulticastPkts = ifInMulticastPktList[ti].Value.(uint64)
-							ifStats.IfHCOutMulticastPkts = ifOutMulticastPktList[ti].Value.(uint64)
-							break
+							if ifInMulticastPktList[ti].Value != nil && ifOutMulticastPktList[ti].Value != nil {
+								ifStats.IfHCInMulticastPkts = ifInMulticastPktList[ti].Value.(uint64)
+								ifStats.IfHCOutMulticastPkts = ifOutMulticastPktList[ti].Value.(uint64)
+								break
+							}
 						}
 					}
 				}
@@ -316,9 +324,11 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 				if ignoreDiscards == false {
 					for ti, ifInDiscardsPDU := range ifInDiscardsList {
 						if strings.Replace(ifInDiscardsPDU.Name, ifInDiscardsOidPrefix, "", 1) == ifIndexStr {
-							ifStats.IfInDiscards = ifInDiscardsList[ti].Value.(int)
-							ifStats.IfOutDiscards = ifOutDiscardsList[ti].Value.(int)
-							break
+							if ifInDiscardsList[ti].Value != nil && ifOutDiscardsList[ti].Value != nil {
+								ifStats.IfInDiscards = ifInDiscardsList[ti].Value.(int)
+								ifStats.IfOutDiscards = ifOutDiscardsList[ti].Value.(int)
+								break
+							}
 						}
 					}
 				}
@@ -326,14 +336,18 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 				if ignoreErrors == false {
 					for ti, ifInErrorsPDU := range ifInErrorsList {
 						if strings.Replace(ifInErrorsPDU.Name, ifInErrorsOidPrefix, "", 1) == ifIndexStr {
-							ifStats.IfInErrors = ifInErrorsList[ti].Value.(int)
-							break
+							if ifInErrorsList[ti].Value != nil {
+								ifStats.IfInErrors = ifInErrorsList[ti].Value.(int)
+								break
+							}
 						}
 					}
 					for ti, ifOutErrorsPDU := range ifOutErrorsList {
 						if strings.Replace(ifOutErrorsPDU.Name, ifOutErrorsOidPrefix, "", 1) == ifIndexStr {
-							ifStats.IfOutErrors = ifOutErrorsList[ti].Value.(int)
-							break
+							if ifOutErrorsList[ti].Value != nil {
+								ifStats.IfOutErrors = ifOutErrorsList[ti].Value.(int)
+								break
+							}
 						}
 					}
 				}
@@ -341,8 +355,10 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 				if ignoreOperStatus == false {
 					for ti, ifOperStatusPDU := range ifStatusList {
 						if strings.Replace(ifOperStatusPDU.Name, ifOperStatusOidPrefix, "", 1) == ifIndexStr {
-							ifStats.IfOperStatus = ifStatusList[ti].Value.(int)
-							break
+							if ifStatusList[ti].Value != nil {
+								ifStats.IfOperStatus = ifStatusList[ti].Value.(int)
+								break
+							}
 						}
 					}
 				}
@@ -350,8 +366,10 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 				if ignoreUnknownProtos == false {
 					for ti, ifInUnknownProtosPDU := range ifInUnknownProtosList {
 						if strings.Replace(ifInUnknownProtosPDU.Name, ifInUnknownProtosPrefix, "", 1) == ifIndexStr {
-							ifStats.IfInUnknownProtos = ifInUnknownProtosList[ti].Value.(int)
-							break
+							if ifInUnknownProtosList[ti].Value != nil {
+								ifStats.IfInUnknownProtos = ifInUnknownProtosList[ti].Value.(int)
+								break
+							}
 						}
 					}
 				}
@@ -359,16 +377,20 @@ func ListIfStats(ip, community string, timeout int, ignoreIface []string, retry 
 				if ignoreOutQLen == false {
 					for ti, ifOutQLenPDU := range ifOutQLenList {
 						if strings.Replace(ifOutQLenPDU.Name, ifOutQLenPrefix, "", 1) == ifIndexStr {
-							ifStats.IfOutQLen = ifOutQLenList[ti].Value.(int)
-							break
+							if ifOutQLenList[ti].Value != nil {
+								ifStats.IfOutQLen = ifOutQLenList[ti].Value.(int)
+								break
+							}
 						}
 					}
 				}
 
 				for ti, ifSpeedPDU := range ifSpeedList {
 					if strings.Replace(ifSpeedPDU.Name, ifSpeedOidPrefix, "", 1) == ifIndexStr {
-						ifStats.IfSpeed = 1000 * 1000 * ifSpeedList[ti].Value.(int)
-						break
+						if ifSpeedList[ti].Value != nil {
+							ifStats.IfSpeed = 1000 * 1000 * ifSpeedList[ti].Value.(int)
+							break
+						}
 					}
 				}
 
