@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gaochao1/gosnmp"
+	"github.com/ulricqin/gosnmp"
 )
 
 func MemUtilization(ip, community string, timeout, retry int) (int, error) {
