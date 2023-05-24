@@ -27,6 +27,8 @@ func CpuUtilization(ip, community string, timeout, retry int) (int, error) {
 		oid = "1.3.6.1.4.1.9.9.305.1.1.1.0"
 	case "Cisco", "Cisco_IOS_7200", "Cisco_old":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1"
+	case "Hillstone":
+		oid = ".1.3.6.1.4.1.28557.2.2.1.3"
 	case "Cisco_IOS_XE", "Cisco_IOS_XR":
 		oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.7"
 		method = "getnext"
