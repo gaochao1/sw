@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gaochao1/gosnmp"
+	"github.com/ulricqin/gosnmp"
 )
 
 const (
-	ip           = "10.200.43.101"
-	community    = "123456"
+	ip           = "10.200.43.1"
+	community    = "test"
 	oid          = "1.3.6.1.4.1.2021.10.1.3.1"
 	timeout      = 1000
 	method       = "get"

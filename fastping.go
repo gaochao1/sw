@@ -3,7 +3,8 @@ package sw
 import (
 	"net"
 	"time"
-	"github.com/tatsushid/go-fastping"
+
+	"github.com/freedomkk-qfeng/go-fastping"
 )
 
 func fastPingRtt(ip string, timeout int) (float64, error) {
