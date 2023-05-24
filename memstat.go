@@ -80,7 +80,7 @@ func MemUtilization(ip, community string, timeout, retry int) (int, error) {
 		return GetArubaMem(ip, community, timeout, retry)
 	case "Cisco_Controller":
 		return GetCiscoControllerMem(ip, community, timeout, retry)
-	case "HillSone":
+	case "Hillstone":
 		return GetHillSoneMem(ip, community, timeout, retry)
 	default:
 		err = errors.New(ip + " Switch Vendor is not defined")
@@ -294,7 +294,7 @@ func GetCiscoControllerMem(ip, community string, timeout, retry int) (int, error
 
 func GetHillSoneMem(ip, community string, timeout, retry int) (int, error) {
 
-	method := "get"
+	method := "getnext"
 	memTotalOid := ".1.3.6.1.4.1.28557.2.2.1.4"
 	memTotal, err := RunSnmp(ip, community, memTotalOid, method, timeout)
 	memFreeOid := ".1.3.6.1.4.1.28557.2.2.1.5"

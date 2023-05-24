@@ -128,7 +128,7 @@ func SysVendor(ip, community string, retry int, timeout int) (string, error) {
 		return "Aruba", err
 	}
 
-	if strings.Contains(sysDescrLower, "Hillstone") {
+	if strings.Contains(sysDescrLower, "hillstone") {
 		return "Hillstone", err
 	}
 
